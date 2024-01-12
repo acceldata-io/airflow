@@ -285,7 +285,8 @@ devel-devscripts = [
     "twine>=4.0.2",
 ]
 devel-duckdb = [
-    "duckdb>=0.9.0",
+    # TODO: duckdb dev wheels are produced in a strange way with 3.12 support (they are missing for linux now)
+    "duckdb>=0.9.0; python_version < '3.12'",
 ]
 # Mypy 0.900 and above ships only with stubs from stdlib so if we need other stubs, we need to install them
 # manually as `types-*`. See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
@@ -342,6 +343,7 @@ devel-tests = [
     "pytest>=7.4.4",
     "requests_mock>=1.11.0",
     "time-machine>=2.13.0",
+    "wheel>=0.42.0",
 ]
 # END OF devel extras
 # START OF doc extras
@@ -552,11 +554,11 @@ amazon = [ # source: airflow/providers/amazon/provider.yaml
   "s3fs>=2023.10.0",
 ]
 apache-beam = [ # source: airflow/providers/apache/beam/provider.yaml
-  "apache-beam>=2.53.0",
-  "pyarrow>=14.0.1",
+  "apache-beam>=2.53.0;python_version != \"3.12\"",
+  "pyarrow>=14.0.1;python_version != \"3.12\"",
 ]
 apache-cassandra = [ # source: airflow/providers/apache/cassandra/provider.yaml
-  "cassandra-driver>=3.13.0",
+  "cassandra-driver>=3.13.0;python_version != \"3.12\"",
 ]
 apache-drill = [ # source: airflow/providers/apache/drill/provider.yaml
   "apache-airflow[common_sql]",
@@ -851,9 +853,9 @@ pagerduty = [ # source: airflow/providers/pagerduty/provider.yaml
   "pdpyras>=4.1.2",
 ]
 papermill = [ # source: airflow/providers/papermill/provider.yaml
-  "ipykernel",
-  "papermill[all]>=2.4.0",
-  "scrapbook[all]",
+  "ipykernel;python_version != \"3.12\"",
+  "papermill[all]>=2.4.0;python_version != \"3.12\"",
+  "scrapbook[all];python_version != \"3.12\"",
 ]
 pgvector = [ # source: airflow/providers/pgvector/provider.yaml
   "apache-airflow[postgres]",
@@ -1200,6 +1202,13 @@ platforms = ["linux", "macos"]
 description = "Environment with Python 3.11. No devel installed"
 features = []
 
+[tool.hatch.envs.airflow-312]
+python = "3.12"
+platforms = ["linux", "macos"]
+description = "Environment with Python 3.12. No devel installed"
+features = []
+
+
 [tool.hatch.version]
 path = "airflow/__init__.py"
 
@@ -1243,7 +1252,7 @@ artifacts = [
 
 [tool.black]
 line-length = 110
-target-version = ['py38', 'py39', 'py310', 'py311']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 
 [tool.ruff]
 target-version = "py38"

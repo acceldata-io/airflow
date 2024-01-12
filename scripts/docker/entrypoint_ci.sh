@@ -278,11 +278,20 @@ function check_run_tests() {
     fi
 }
 
+# TODO: Remove me after universal pathlib with Python 3.12 support is released
+function check_install_universal_pathlib() {
+    echo
+    echo "${COLOR_BLUE}Installing universal python pathlib from PR url${COLOR_RESET}"
+    echo
+    pip install --root-user-action ignore git+https://github.com/ap--/universal_pathlib/@support-py312#egg=universal-pathlib
+}
+
 determine_airflow_to_use
 environment_initialization
 check_boto_upgrade
 check_download_sqlalchemy
 check_download_pendulum
+check_install_universal_pathlib
 check_run_tests "${@}"
 
 # If we are not running tests - just exec to bash shell

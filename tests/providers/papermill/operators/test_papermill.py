@@ -21,6 +21,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from airflow import PY312
 from airflow.providers.papermill.hooks.kernel import (
     JUPYTER_KERNEL_CONTROL_PORT,
     JUPYTER_KERNEL_HB_PORT,
@@ -34,6 +35,12 @@ from airflow.utils import timezone
 DEFAULT_DATE = timezone.datetime(2021, 1, 1)
 TEST_INPUT_URL = "/foo/bar"
 TEST_OUTPUT_URL = "/spam/egg"
+
+
+pytestmark = pytest.mark.skipif(
+    PY312,
+    reason="PapermillOperator is not supported on Python 3.12",
+)
 
 
 class TestNoteBook:

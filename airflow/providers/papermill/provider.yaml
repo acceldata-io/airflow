@@ -21,6 +21,8 @@ name: Papermill
 description: |
     `Papermill <https://github.com/nteract/papermill>`__
 
+excluded-python-versions: ['3.12']
+
 state: ready
 source-date-epoch: 1705912216
 versions:

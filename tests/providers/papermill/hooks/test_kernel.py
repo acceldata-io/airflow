@@ -18,8 +18,16 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import pytest
+
+from airflow import PY312
 from airflow.models import Connection
 from airflow.providers.papermill.hooks.kernel import KernelHook
+
+pytestmark = pytest.mark.skipif(
+    PY312,
+    reason="PapermillOperator is not supported on Python 3.12",
+)
 
 
 class TestKernelHook:

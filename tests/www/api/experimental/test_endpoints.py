@@ -26,7 +26,7 @@ from urllib.parse import quote_plus
 
 import pytest
 
-from airflow import settings
+from airflow import PY312, settings
 from airflow.api.common.experimental.trigger_dag import trigger_dag
 from airflow.models import DagBag, DagRun, Pool, TaskInstance
 from airflow.models.serialized_dag import SerializedDagModel
@@ -334,6 +334,9 @@ class TestLineageApiExperimental(TestBase):
             dag.sync_to_db()
             SerializedDagModel.write_dag(dag)
 
+    @pytest.mark.skipif(
+        PY312, reason="Skipped as papermill used with experimental lineage is not Python 3.12 compatible"
+    )
     @mock.patch("airflow.settings.DAGS_FOLDER", PAPERMILL_EXAMPLE_DAGS)
     def test_lineage_info(self):
         url_template = "/api/experimental/lineage/{}/{}"
