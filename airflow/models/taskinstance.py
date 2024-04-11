@@ -3270,6 +3270,7 @@ class TaskInstance(Base, LoggingMixin):
                     run_id=ti.run_id,
                 ),
                 session=session,
+                nowait=True,
             ).one()
 
             task = ti.task
