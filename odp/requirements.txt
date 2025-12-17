@@ -12,8 +12,8 @@ Cython
 # Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
 PyMySQL==1.1.1
 
-# Core Airflow with extras
-apache-airflow[cncf.kubernetes,celery,ldap,kerberos,statsd,openlineage]==2.8.1
+# Core Airflow with specific extras (NOT using [all] to avoid mysql extra pulling mysqlclient)
+apache-airflow[celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password]==2.8.1
 
 # Swagger UI support
 connexion[swagger-ui]
@@ -23,9 +23,6 @@ apache-airflow-providers-cncf-kubernetes==7.13.0
 
 # XML Security (requires system packages: libxml2, libxml2-devel, xmlsec1, xmlsec1-devel)
 xmlsec
-
-# Full Airflow with all extras
-apache-airflow[all]==2.8.1
 
 # Environment packing
 virtualenv

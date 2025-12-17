@@ -12,6 +12,14 @@ if [ -f /etc/os-release ]; then
         sed -i 's/mirror.centos.org/vault.centos.org/g' /etc/yum.repos.d/*.repo
         sed -i 's/^#.*baseurl=http/baseurl=http/g' /etc/yum.repos.d/*.repo
         sed -i 's/^mirrorlist=http/#mirrorlist=http/g' /etc/yum.repos.d/*.repo
+        
+        echo "Installing devtoolset-8 for newer GCC (required for gssapi, krb5)..."
+        yum install -y centos-release-scl || true
+        # Fix SCL repo URLs too
+        sed -i 's/mirror.centos.org/vault.centos.org/g' /etc/yum.repos.d/CentOS-SCLo-scl*.repo 2>/dev/null || true
+        sed -i 's/^#.*baseurl=http/baseurl=http/g' /etc/yum.repos.d/CentOS-SCLo-scl*.repo 2>/dev/null || true
+        sed -i 's/^mirrorlist=http/#mirrorlist=http/g' /etc/yum.repos.d/CentOS-SCLo-scl*.repo 2>/dev/null || true
+        yum install -y devtoolset-8-gcc devtoolset-8-gcc-c++ || true
     fi
 fi
 
