@@ -31,6 +31,21 @@ echo "Modifying constraints file..."
 # Remove mysqlclient (we use PyMySQL instead)
 sed -i '/^mysqlclient/d' "${LOCAL_CONSTRAINTS}"
 
+# Remove packages that we explicitly pin in requirements.txt (our versions take precedence)
+sed -i '/^aiofiles/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^cachetools/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^distlib/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^filelock/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^google-auth/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^kubernetes/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^kubernetes-asyncio/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^lxml/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^platformdirs/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^requests-oauthlib/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^websocket-client/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^xmlsec/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
+
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
