@@ -24,5 +24,13 @@ yum install -y libtool-ltdl-devel
 echo "Installing ODBC dependencies..."
 yum install -y unixODBC unixODBC-devel
 
-echo "Prerequisites installation complete!"
+echo "Installing Kerberos dependencies..."
+yum install -y krb5-devel || true
 
+echo "Installing LDAP dependencies..."
+yum install -y openldap-devel || true
+
+echo "Installing PostgreSQL dependencies..."
+yum install -y postgresql-devel || true
+
+echo "Prerequisites installation complete!"
