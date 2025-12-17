@@ -31,12 +31,10 @@ echo "Modifying constraints file..."
 # Remove mysqlclient (we use PyMySQL instead)
 sed -i '/^mysqlclient/d' "${LOCAL_CONSTRAINTS}"
 
-# Enable devtoolset-8 if available (provides GCC 8 for C99 support)
-if [ -f /opt/rh/devtoolset-8/enable ]; then
-    echo "Enabling devtoolset-8 for newer GCC..."
-    source /opt/rh/devtoolset-8/enable
-    echo "GCC version: $(gcc --version | head -n1)"
-fi
+# Set C99 mode for compiling C extensions (required for gssapi, krb5)
+export CFLAGS="-std=gnu99"
+export CXXFLAGS="-std=gnu99"
+echo "CFLAGS set to: ${CFLAGS}"
 
 echo "Creating virtual environment with ${PY}..."
 $PY -m venv airflow
