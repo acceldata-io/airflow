@@ -1,0 +1,29 @@
+# Apache Airflow Build Requirements
+# Airflow Version: 2.8.1
+# Python Version: 3.8
+# Constraints: https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.8.txt
+
+# Build tools
+setuptools
+docutils
+pytest-runner
+Cython
+
+# Core Airflow with extras (redundant with all extras)
+apache-airflow[cncf.kubernetes,celery,ldap,kerberos,statsd,openlineage]==2.8.1
+
+# Swagger UI support
+connexion[swagger-ui]
+
+# Kubernetes provider
+apache-airflow-providers-cncf-kubernetes==7.13.0
+
+# XML Security (requires system packages: libxml2, libxml2-devel, xmlsec1, xmlsec1-devel)
+xmlsec
+
+# Full Airflow with all extras
+apache-airflow[all]==2.8.1
+
+# Environment packing
+virtualenv
+venv-pack
