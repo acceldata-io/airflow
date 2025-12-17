@@ -69,7 +69,7 @@ sudo cp --no-clobber ./libpython3.8.so* /lib64/
 sudo chmod 755 /lib64/libpython3.8.so*
 
 # Add the path to the shared libraries to LD_LIBRARY_PATH in .bashrc
-echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/" >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:/usr/local/lib/"' >> ~/.bashrc
 
 # Reload .bashrc to apply changes
 source ~/.bashrc
