@@ -29,11 +29,16 @@ sudo yum install tcl -y
 make
 sudo make install
 
-# Check SQLite version
-sqlite3 --version
+# Update library cache so Python can find SQLite
+sudo ldconfig
 
-# Print the current PATH
-echo $PATH
+# Verify SQLite installation
+echo "SQLite version:"
+sqlite3 --version
+echo "SQLite library location:"
+ls -la /usr/lib/libsqlite3* || ls -la /usr/lib64/libsqlite3* || true
+echo "SQLite header location:"
+ls -la /usr/include/sqlite3.h || true
 
 # ------------------------------------------------------------
 
@@ -53,8 +58,15 @@ tar -zxvf Python-3.8.12.tgz
 # Change into the Python source directory
 cd Python-3.8.12/
 
-# Configure the build, enabling shared libraries
-./configure --enable-shared
+# Set environment variables so Python can find SQLite
+export LDFLAGS="-L/usr/lib -L/usr/lib64"
+export CPPFLAGS="-I/usr/include"
+export LD_RUN_PATH="/usr/lib:/usr/lib64"
+
+# Configure the build, enabling shared libraries with SQLite support
+./configure --enable-shared \
+    LDFLAGS="${LDFLAGS}" \
+    CPPFLAGS="${CPPFLAGS}"
 
 # Build Python
 make
@@ -68,11 +80,11 @@ sudo cp --no-clobber ./libpython3.8.so* /lib64/
 # Set the correct permissions for libpython3.8.so
 sudo chmod 755 /lib64/libpython3.8.so*
 
-# Add the path to the shared libraries to LD_LIBRARY_PATH in .bashrc
+# Add the path to the shared libraries to LD_LIBRARY_PATH in .bashrc (for future sessions)
 echo 'export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:/usr/local/lib/"' >> ~/.bashrc
 
-# Reload .bashrc to apply changes
-source ~/.bashrc
+# Set LD_LIBRARY_PATH for current session
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:/usr/local/lib/"
 
 # Create a symbolic link from /usr/local/bin/python3.8 to /usr/bin/python3.8
 sudo ln -s /usr/local/bin/python3.8 /usr/bin/python3.8
