@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+# Install Python 3.8 on CentOS
+# Run this script as root
+set -euo pipefail
+
 # Install Dependencies:
 # Install development tools and dependencies
 yum install gcc openssl-devel wget bzip2-devel libffi-devel zlib-devel -y
