@@ -9,9 +9,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY=python3.8
 PY_VERSION=3.8
 AIRFLOW_VERSION=2.8.1
+AIRFLOW_VERSION_UNDERSCORE="${AIRFLOW_VERSION//./_}"
 CONSTRAINTS_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PY_VERSION}.txt"
 REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements.txt"
 LOCAL_CONSTRAINTS="${SCRIPT_DIR}/constraints-local.txt"
+TARBALL_NAME="airflow_environment_${AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
 
 echo "============================================"
 echo "Airflow ${AIRFLOW_VERSION} Tarball Builder"
@@ -64,10 +66,10 @@ echo "Installing requirements with modified constraints..."
 pip install -r "${REQUIREMENTS_FILE}" --constraint "${LOCAL_CONSTRAINTS}"
 
 echo "Packing environment..."
-venv-pack -o airflow_venv_all.tar.gz
+venv-pack -o "${TARBALL_NAME}"
 
 deactivate
 
 echo "============================================"
-echo "Successfully created airflow_venv_all.tar.gz"
+echo "Successfully created ${TARBALL_NAME}"
 echo "============================================"
