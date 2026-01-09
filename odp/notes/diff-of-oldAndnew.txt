@@ -1,6 +1,6 @@
 #### The ../requirements.txt and other scripts are made to minimise the following diffs
-#### Given the change in time there is some diff in Dependencies (probably because Dependencies have changes online ) and following is as close and simple i was able to get this to. some of them are just _ and - diffs, ignore them and few extra packages like redis or other dependendies added. numpy and pandas are not a requirement for airflow therefore being removed
-####
+#### Given the change in time there is some diff in Dependencies (probably because Dependencies have changes online ) and following is as close and simple i was able to get this to. some of them are just _ and - diffs, ignore them and few extra packages like redis or other dependendies added.
+#### 
 
 (etarball) [root@centos7tpl etarball]# diff old_pip_deps /root/airflow/newtar/new_pip_deps
 18a19,20
