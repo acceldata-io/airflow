@@ -35,6 +35,10 @@ connexion[swagger-ui]
 # Kubernetes provider (matching existing env)
 apache-airflow-providers-cncf-kubernetes==8.4.2
 
+# Data processing
+numpy==1.24.4
+pandas==2.0.3
+
 # Environment packing
 virtualenv
 venv-pack
