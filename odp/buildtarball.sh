@@ -6,8 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-PY=python3.8
-PY_VERSION=3.8
+PY=python3.11
+PY_VERSION=3.11
 AIRFLOW_VERSION=2.8.1
 AIRFLOW_VERSION_UNDERSCORE="${AIRFLOW_VERSION//./_}"
 CONSTRAINTS_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PY_VERSION}.txt"
@@ -41,11 +41,9 @@ sed -i '/^filelock/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^google-auth/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^kubernetes/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^kubernetes-asyncio/d' "${LOCAL_CONSTRAINTS}"
-sed -i '/^lxml/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^platformdirs/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^requests-oauthlib/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^websocket-client/d' "${LOCAL_CONSTRAINTS}"
-sed -i '/^xmlsec/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
