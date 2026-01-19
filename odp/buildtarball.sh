@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Configuration
 PY=python3.11
 PY_VERSION=3.11
-AIRFLOW_VERSION=2.8.1
+AIRFLOW_VERSION=2.8.3
 AIRFLOW_VERSION_UNDERSCORE="${AIRFLOW_VERSION//./_}"
 CONSTRAINTS_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PY_VERSION}.txt"
 REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements.txt"
