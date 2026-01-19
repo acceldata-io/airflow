@@ -1,7 +1,7 @@
 # Apache Airflow Build Requirements
 # Airflow Version: 2.8.1
-# Python Version: 3.8
-# Constraints: Modified from https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.8.txt
+# Python Version: 3.11
+# Constraints: Modified from https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.11.txt
 
 # Build tools
 setuptools
@@ -12,19 +12,17 @@ Cython
 # Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
 PyMySQL==1.1.1
 
-# Pin versions to match existing airflow tarball environment at https://mirror.odp.acceldata.dev/ODP/PY-UTILS/centos7/ 
+# Pin versions to match production Python 3.11 environment
 aiofiles==24.1.0
-cachetools==5.5.2
+cachetools==5.5.0
 distlib==0.3.9
 filelock==3.16.1
-google-auth==2.38.0
-kubernetes==30.1.0
-kubernetes-asyncio==30.1.0
-lxml==5.3.1
+google-auth==2.37.0
+kubernetes==23.6.0
+kubernetes-asyncio==24.2.3
 platformdirs==4.3.6
 requests-oauthlib==2.0.0
 websocket-client==1.8.0
-xmlsec==1.3.14
 
 # Core Airflow with specific extras (NOT using [all] to avoid mysql extra pulling mysqlclient)
 apache-airflow[celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password]==2.8.1
@@ -33,11 +31,11 @@ apache-airflow[celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,
 connexion[swagger-ui]
 
 # Kubernetes provider (matching existing env)
-apache-airflow-providers-cncf-kubernetes==8.4.2
+apache-airflow-providers-cncf-kubernetes==7.13.0
 
 # Data processing
-numpy==1.24.4
-pandas==2.0.3
+numpy==2.2.0
+pandas==2.2.3
 
 # Environment packing
 virtualenv
