@@ -10,3 +10,4 @@ with these changes i intend to make airflow code bit more manageable and trackab
 
 [This file shows pip packages in new tarball (built using these scripts)](./notes/new-tarball-piplist.txt)
 
+[This file shows pip packages for Python 3.11 production environment](./notes/python311-production-piplist.txt)
