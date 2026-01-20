@@ -86,6 +86,21 @@ install_ubi9_missing_packages() {
     else
         echo "readline-devel already installed"
     fi
+
+    # Check if re2-devel is missing
+    if ! rpm -q re2-devel &>/dev/null; then
+        echo "Downloading re2 and re2-devel from EPEL..."
+        curl -sLO https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/r/re2-20211101-20.el9.x86_64.rpm
+        curl -sLO https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/r/re2-devel-20211101-20.el9.x86_64.rpm
+        if [ -s re2-20211101-20.el9.x86_64.rpm ] && [ -s re2-devel-20211101-20.el9.x86_64.rpm ]; then
+            dnf install -y ./re2-20211101-20.el9.x86_64.rpm ./re2-devel-20211101-20.el9.x86_64.rpm || true
+            rm -f re2-*.rpm
+        else
+            echo "WARNING: Failed to download re2-devel"
+        fi
+    else
+        echo "re2-devel already installed"
+    fi
 }
 
 # -----------------------------
