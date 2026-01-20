@@ -246,7 +246,8 @@ install_python38_ubuntu() {
     # Ensure pip is available for Python 3.8
     if ! python3.8 -m pip --version &>/dev/null; then
         echo "Installing pip for Python 3.8..."
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.8
+        # Use Python 3.8 specific get-pip.py (main get-pip.py requires Python 3.9+)
+        curl -sS https://bootstrap.pypa.io/pip/3.8/get-pip.py | python3.8
     fi
     
     echo "Python 3.8 installation complete via deadsnakes PPA."
