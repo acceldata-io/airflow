@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Build Apache Airflow tarball for ODP
+# This script handles the complete build process:
+#   1. Install prerequisites (system dependencies)
+#   2. Install Python 3.8 (based on OS)
+#   3. Create virtual environment and build tarball
 set -euo pipefail
 
 # Get the directory where this script is located
@@ -24,6 +28,49 @@ if [ ! -f "${REQUIREMENTS_FILE}" ]; then
     echo "ERROR: requirements.txt not found at ${REQUIREMENTS_FILE}"
     exit 1
 fi
+
+
+# Step 1: Install Prerequisites
+echo ""
+echo "[Step 1] Installing Prerequisites"
+
+PREREQS_SCRIPT="${SCRIPT_DIR}/install_prereqs.sh"
+if [ -f "${PREREQS_SCRIPT}" ]; then
+    echo "Running install_prereqs.sh..."
+    chmod +x "${PREREQS_SCRIPT}"
+    bash "${PREREQS_SCRIPT}"
+else
+    echo "WARNING: install_prereqs.sh not found at ${PREREQS_SCRIPT}"
+    echo "Skipping prerequisites installation..."
+fi
+
+
+# Step 2: Install Python 3.8
+echo ""
+echo "[Step 2] Installing Python 3.8"
+
+
+PYTHON_SCRIPT="${SCRIPT_DIR}/install_python38.sh"
+if [ -f "${PYTHON_SCRIPT}" ]; then
+    echo "Running install_python38.sh..."
+    chmod +x "${PYTHON_SCRIPT}"
+    bash "${PYTHON_SCRIPT}"
+else
+    echo "ERROR: install_python38.sh not found at ${PYTHON_SCRIPT}"
+    exit 1
+fi
+
+# Verify Python 3.8 is available
+if ! command -v ${PY} &>/dev/null; then
+    echo "ERROR: ${PY} is not available after installation"
+    exit 1
+fi
+
+echo "Python 3.8 is ready: $(${PY} --version)"
+
+# Step 3: Build Tarball
+echo ""
+echo "[Step 3] Building Airflow Tarball"
 
 # Download and modify constraints file
 echo "Downloading constraints file..."
