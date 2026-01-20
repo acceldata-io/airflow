@@ -207,9 +207,6 @@ install_python38_rhel8() {
     echo "Installing Python 3.8 via yum..."
     yum install -y python38 python38-devel python38-pip || dnf install -y python38 python38-devel python38-pip
     
-    # Install python3.8-venv if available
-    yum install -y python38-venv 2>/dev/null || true
-    
     echo "Python 3.8 installation complete via package manager."
 }
 
