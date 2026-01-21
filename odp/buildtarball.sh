@@ -9,14 +9,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY=python3.11
 PY_VERSION=3.11
 AIRFLOW_VERSION=2.8.1
-AIRFLOW_VERSION_UNDERSCORE="${AIRFLOW_VERSION//./_}"
+
+# Read ODP version from VERSION file
+VERSION_FILE="${SCRIPT_DIR}/VERSION"
+if [ ! -f "${VERSION_FILE}" ]; then
+    echo "ERROR: VERSION file not found at ${VERSION_FILE}"
+    exit 1
+fi
+ODP_VERSION=$(cat "${VERSION_FILE}" | tr -d '[:space:]')
+
+# Combined version for tarball naming
+ODP_AIRFLOW_VERSION="${AIRFLOW_VERSION}.${ODP_VERSION}"
+ODP_AIRFLOW_VERSION_UNDERSCORE="${ODP_AIRFLOW_VERSION//./_}"
+ODP_AIRFLOW_VERSION_UNDERSCORE="${ODP_AIRFLOW_VERSION_UNDERSCORE//-/_}"
+
 CONSTRAINTS_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PY_VERSION}.txt"
 REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements.txt"
 LOCAL_CONSTRAINTS="${SCRIPT_DIR}/constraints-local.txt"
-TARBALL_NAME="airflow_environment_${AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
+TARBALL_NAME="airflow_environment_${ODP_AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
 
 echo "============================================"
-echo "Airflow ${AIRFLOW_VERSION} Tarball Builder"
+echo "Airflow Tarball Builder"
+echo "Airflow Version: ${AIRFLOW_VERSION}"
+echo "ODP Version: ${ODP_VERSION}"
+echo "Combined Version: ${ODP_AIRFLOW_VERSION}"
+echo "Tarball: ${TARBALL_NAME}"
 echo "============================================"
 
 # Verify requirements.txt exists
@@ -24,6 +41,46 @@ if [ ! -f "${REQUIREMENTS_FILE}" ]; then
     echo "ERROR: requirements.txt not found at ${REQUIREMENTS_FILE}"
     exit 1
 fi
+
+# Step 1: Install Prerequisites
+echo ""
+echo "[Step 1] Installing Prerequisites"
+
+PREREQS_SCRIPT="${SCRIPT_DIR}/install_prereqs.sh"
+if [ -f "${PREREQS_SCRIPT}" ]; then
+    echo "Running install_prereqs.sh..."
+    chmod +x "${PREREQS_SCRIPT}"
+    bash "${PREREQS_SCRIPT}"
+else
+    echo "WARNING: install_prereqs.sh not found at ${PREREQS_SCRIPT}"
+    echo "Skipping prerequisites installation..."
+fi
+
+# Step 2: Install Python 3.11
+echo ""
+echo "[Step 2] Installing Python 3.11"
+
+PYTHON_SCRIPT="${SCRIPT_DIR}/install_python311.sh"
+if [ -f "${PYTHON_SCRIPT}" ]; then
+    echo "Running install_python311.sh..."
+    chmod +x "${PYTHON_SCRIPT}"
+    bash "${PYTHON_SCRIPT}"
+else
+    echo "ERROR: install_python311.sh not found at ${PYTHON_SCRIPT}"
+    exit 1
+fi
+
+# Verify Python 3.11 is available
+if ! command -v ${PY} &>/dev/null; then
+    echo "ERROR: ${PY} is not available after installation"
+    exit 1
+fi
+
+echo "Python 3.11 is ready: $(${PY} --version)"
+
+# Step 3: Build Tarball
+echo ""
+echo "[Step 3] Building Airflow Tarball"
 
 # Download and modify constraints file
 echo "Downloading constraints file..."
@@ -62,6 +119,33 @@ pip install --upgrade pip
 
 echo "Installing requirements with modified constraints..."
 pip install -r "${REQUIREMENTS_FILE}" --constraint "${LOCAL_CONSTRAINTS}"
+
+# Generate BUILD_INFO manifest inside venv (so it's included in tarball)
+BUILD_INFO_FILE="airflow/BUILD_INFO"
+echo "Generating BUILD_INFO manifest..."
+
+# Detect OS for manifest
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    BUILD_OS="${ID}-${VERSION_ID}"
+else
+    BUILD_OS="unknown"
+fi
+
+# Get actual Python version
+PYTHON_FULL_VERSION=$(${PY} --version 2>&1 | awk '{print $2}')
+
+cat > "${BUILD_INFO_FILE}" <<EOF
+AIRFLOW_VERSION=${AIRFLOW_VERSION}
+ODP_VERSION=${ODP_VERSION}
+ODP_AIRFLOW_VERSION=${ODP_AIRFLOW_VERSION}
+BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+BUILD_OS=${BUILD_OS}
+PYTHON_VERSION=${PYTHON_FULL_VERSION}
+EOF
+
+echo "BUILD_INFO contents:"
+cat "${BUILD_INFO_FILE}"
 
 echo "Packing environment..."
 venv-pack -o "${TARBALL_NAME}"
