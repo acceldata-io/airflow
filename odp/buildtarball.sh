@@ -13,14 +13,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY=python3.8
 PY_VERSION=3.8
 AIRFLOW_VERSION=2.8.1
-AIRFLOW_VERSION_UNDERSCORE="${AIRFLOW_VERSION//./_}"
+
+# Read ODP version from VERSION file
+VERSION_FILE="${SCRIPT_DIR}/VERSION"
+if [ ! -f "${VERSION_FILE}" ]; then
+    echo "ERROR: VERSION file not found at ${VERSION_FILE}"
+    exit 1
+fi
+ODP_VERSION=$(cat "${VERSION_FILE}" | tr -d '[:space:]')
+
+# Combined version for tarball naming
+ODP_AIRFLOW_VERSION="${AIRFLOW_VERSION}-${ODP_VERSION}"
+ODP_AIRFLOW_VERSION_UNDERSCORE="${ODP_AIRFLOW_VERSION//./_}"
+ODP_AIRFLOW_VERSION_UNDERSCORE="${ODP_AIRFLOW_VERSION_UNDERSCORE//-/_}"
+
 CONSTRAINTS_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PY_VERSION}.txt"
 REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements.txt"
 LOCAL_CONSTRAINTS="${SCRIPT_DIR}/constraints-local.txt"
-TARBALL_NAME="airflow_environment_${AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
+TARBALL_NAME="airflow_environment_${ODP_AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
 
 echo "============================================"
-echo "Airflow ${AIRFLOW_VERSION} Tarball Builder"
+echo "Airflow Tarball Builder"
+echo "Airflow Version: ${AIRFLOW_VERSION}"
+echo "ODP Version: ${ODP_VERSION}"
+echo "Combined Version: ${ODP_AIRFLOW_VERSION}"
+echo "Tarball: ${TARBALL_NAME}"
 echo "============================================"
 
 # Verify requirements.txt exists
@@ -111,6 +128,33 @@ pip install --upgrade pip
 
 echo "Installing requirements with modified constraints..."
 pip install -r "${REQUIREMENTS_FILE}" --constraint "${LOCAL_CONSTRAINTS}"
+
+# Generate BUILD_INFO manifest inside venv (so it's included in tarball)
+BUILD_INFO_FILE="airflow/BUILD_INFO"
+echo "Generating BUILD_INFO manifest..."
+
+# Detect OS for manifest
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    BUILD_OS="${ID}-${VERSION_ID}"
+else
+    BUILD_OS="unknown"
+fi
+
+# Get actual Python version
+PYTHON_FULL_VERSION=$(${PY} --version 2>&1 | awk '{print $2}')
+
+cat > "${BUILD_INFO_FILE}" <<EOF
+AIRFLOW_VERSION=${AIRFLOW_VERSION}
+ODP_VERSION=${ODP_VERSION}
+ODP_AIRFLOW_VERSION=${ODP_AIRFLOW_VERSION}
+BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+BUILD_OS=${BUILD_OS}
+PYTHON_VERSION=${PYTHON_FULL_VERSION}
+EOF
+
+echo "BUILD_INFO contents:"
+cat "${BUILD_INFO_FILE}"
 
 echo "Packing environment..."
 venv-pack -o "${TARBALL_NAME}"
