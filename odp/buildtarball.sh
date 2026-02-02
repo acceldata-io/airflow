@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Configuration
 PY=python3.11
 PY_VERSION=3.11
-AIRFLOW_VERSION=2.8.1
+AIRFLOW_VERSION=2.8.3
 
 # Read ODP version from VERSION file
 VERSION_FILE="${SCRIPT_DIR}/VERSION"

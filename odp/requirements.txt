@@ -1,7 +1,7 @@
 # Apache Airflow Build Requirements
-# Airflow Version: 2.8.1
+# Airflow Version: 2.8.3
 # Python Version: 3.11
-# Constraints: Modified from https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.11.txt
+# Constraints: Modified from https://raw.githubusercontent.com/apache/airflow/constraints-2.8.3/constraints-3.11.txt
 
 # Build tools
 setuptools
@@ -14,24 +14,24 @@ PyMySQL==1.1.1
 
 # Pin versions to match production Python 3.11 environment
 aiofiles==24.1.0
-cachetools==5.5.0
+cachetools==5.5.2
 distlib==0.3.9
-filelock==3.16.1
-google-auth==2.37.0
-kubernetes==23.6.0
-kubernetes-asyncio==24.2.3
-platformdirs==4.3.6
+filelock==3.18.0
+google-auth==2.38.0
+kubernetes==31.0.0
+kubernetes-asyncio==30.3.1
+platformdirs==4.3.7
 requests-oauthlib==2.0.0
 websocket-client==1.8.0
 
 # Core Airflow with specific extras (NOT using [all] to avoid mysql extra pulling mysqlclient)
-apache-airflow[celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password]==2.8.1
+apache-airflow[celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password]==2.8.3
 
 # Swagger UI support
 connexion[swagger-ui]
 
 # Kubernetes provider (matching existing env)
-apache-airflow-providers-cncf-kubernetes==7.13.0
+apache-airflow-providers-cncf-kubernetes==10.0.1
 
 # Data processing
 numpy
