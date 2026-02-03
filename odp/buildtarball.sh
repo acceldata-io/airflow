@@ -103,6 +103,9 @@ sed -i '/^requests-oauthlib/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^websocket-client/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 
+# Remove google-re2 constraint to allow fresh build with re2-devel
+sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
+
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
@@ -119,6 +122,11 @@ pip install --upgrade pip
 
 echo "Installing requirements with modified constraints..."
 pip install -r "${REQUIREMENTS_FILE}" --constraint "${LOCAL_CONSTRAINTS}"
+
+# Reinstall google-re2 to ensure it compiles against system re2-devel
+echo "Reinstalling google-re2 with system re2 library..."
+pip uninstall -y google-re2 || true
+pip install google-re2 --force-reinstall --no-cache-dir
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="airflow/BUILD_INFO"
