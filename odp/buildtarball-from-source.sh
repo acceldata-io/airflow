@@ -123,15 +123,22 @@ pip install \
 # Install Airflow from local source with specific extras
 # The extras are similar to what was in the original requirements.txt
 echo ""
-echo "Installing Airflow from local source with extras..."
+echo "============================================"
+echo "Installing Airflow from LOCAL SOURCE CODE"
 echo "Source path: ${AIRFLOW_SOURCE_ROOT}"
+echo "Source version: ${AIRFLOW_VERSION}"
+echo "pyproject.toml: ${AIRFLOW_SOURCE_ROOT}/pyproject.toml"
+echo "============================================"
+echo ""
+echo "NOTE: You should see 'Processing ${AIRFLOW_SOURCE_ROOT}' below (NOT 'Downloading apache-airflow')"
+echo ""
 
 # Define the extras we want (same as original requirements.txt but without 'mysql' which pulls mysqlclient)
 AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password"
 
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
-pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation
+pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
 
 # Install additional dependencies from requirements-source.txt
 echo ""
