@@ -241,3 +241,5 @@ pip-wheel-metadata
 
 # airflow-build-dockerfile and correconding ignore file
 airflow-build-dockerfile*
+
+.github/actions
