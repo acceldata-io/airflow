@@ -38,7 +38,7 @@ detect_os() {
 
 install_rhel_prereqs() {
     echo "Detected RHEL/CentOS - using yum package manager"
-    
+
     echo "Installing XML and XMLSEC dependencies..."
     yum install -y libxml2 libxml2-devel xmlsec1 xmlsec1-devel
 
@@ -60,7 +60,7 @@ install_rhel_prereqs() {
 
 install_ubuntu_prereqs() {
     echo "Detected Ubuntu ${OS_VERSION_ID} - using apt package manager"
-    
+
     # Update package lists
     echo "Updating package lists..."
     apt-get update -y
@@ -91,6 +91,17 @@ install_ubuntu_prereqs() {
 }
 
 # Main
+
+# Check for UBI9 first - if detected, use the dedicated UBI9 script
+if [ -f /etc/yum.repos.d/ubi.repo ]; then
+    echo "============================================"
+    echo "Detected UBI9 (Red Hat Universal Base Image 9)"
+    echo "Running dedicated UBI9 prerequisites script..."
+    echo "============================================"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    exec bash "${SCRIPT_DIR}/install_prereqs_ubi9.sh"
+fi
+
 detect_os
 
 echo "============================================"
