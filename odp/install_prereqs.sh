@@ -7,15 +7,30 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Detect OS
 detect_os() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         OS_ID="${ID}"
         OS_VERSION_ID="${VERSION_ID:-}"
+        OS_VERSION_MAJOR="${OS_VERSION_ID%%.*}"
+        
+        # Detect if running in UBI (Universal Base Image) container
+        # UBI reports ID=rhel but has limited repos
+        IS_UBI=false
+        if [ "${OS_ID}" = "rhel" ]; then
+            # Check for UBI repo file (most reliable indicator)
+            if [ -f /etc/yum.repos.d/ubi.repo ]; then
+                IS_UBI=true
+            fi
+        fi
     elif [ -f /etc/redhat-release ]; then
         OS_ID="rhel"
         OS_VERSION_ID=$(grep -oE '[0-9]+' /etc/redhat-release | head -1)
+        OS_VERSION_MAJOR="${OS_VERSION_ID}"
+        IS_UBI=false
     else
         echo "ERROR: Unable to detect OS. Supported: RHEL/CentOS 8+, Ubuntu 20/22"
         exit 1
@@ -81,7 +96,23 @@ detect_os
 echo "============================================"
 echo "Installing Airflow Prerequisites"
 echo "Detected OS: ${OS_ID} ${OS_VERSION_ID}"
+if [ "${IS_UBI:-false}" = true ]; then
+    echo "Environment: UBI (Universal Base Image)"
+fi
 echo "============================================"
+
+# If UBI9 detected, delegate to the dedicated UBI9 script
+if [ "${IS_UBI:-false}" = true ] && [ "${OS_VERSION_MAJOR:-}" = "9" ]; then
+    UBI9_SCRIPT="${SCRIPT_DIR}/install_prereqs_ubi9.sh"
+    if [ -f "${UBI9_SCRIPT}" ]; then
+        echo "Delegating to UBI9-specific prerequisites script..."
+        chmod +x "${UBI9_SCRIPT}"
+        exec bash "${UBI9_SCRIPT}"
+    else
+        echo "ERROR: UBI9 detected but install_prereqs_ubi9.sh not found at ${UBI9_SCRIPT}"
+        exit 1
+    fi
+fi
 
 case "${OS_ID}" in
     rhel|centos|rocky|almalinux|fedora)
