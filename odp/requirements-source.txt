@@ -1,0 +1,32 @@
+# Additional Dependencies for Source-Built Airflow Tarball
+# Note: apache-airflow is NOT included here - it's installed from local source
+# Python Version: 3.11
+
+# Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
+PyMySQL==1.1.1
+
+# Pin versions to match production Python 3.11 environment
+aiofiles==24.1.0
+cachetools==5.5.2
+distlib==0.3.9
+filelock==3.18.0
+google-auth==2.38.0
+kubernetes==31.0.0
+kubernetes-asyncio==30.3.1
+platformdirs==4.3.7
+requests-oauthlib==2.0.0
+websocket-client==1.8.0
+
+# Swagger UI support
+connexion[swagger-ui]
+
+# Kubernetes provider (matching existing env)
+apache-airflow-providers-cncf-kubernetes==10.0.1
+
+# Data processing
+numpy
+pandas
+
+# Environment packing
+virtualenv
+venv-pack
