@@ -11,10 +11,3 @@ with these changes i intend to make airflow code bit more manageable and trackab
 [This file shows pip packages in new tarball (built using these scripts)](./notes/new-tarball-piplist.txt)
 
 [This file shows pip packages for Python 3.11 production environment](./notes/python311-production-piplist.txt)
-
-
----
-
-## Build
-
-Two ways to build: `./buildtarball.sh` pulls airflow from pip (fast, uses official packages), while `./buildtarball-from-source.sh` compiles from the local source code in parent directory. Source build is slower but lets you apply patches, bugfixes, CVE fixes, or backport features from newer airflow versions, just edit the code and rebuild.
