@@ -84,7 +84,7 @@ if [ -f /etc/yum.repos.d/ubi.repo ]; then
     echo "Running dedicated UBI9 prerequisites script..."
     echo "============================================"
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    exec "${SCRIPT_DIR}/install_prereqs_ubi9.sh"
+    exec bash "${SCRIPT_DIR}/install_prereqs_ubi9.sh"
 fi
 
 detect_os
