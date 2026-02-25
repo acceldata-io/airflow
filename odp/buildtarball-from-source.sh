@@ -86,9 +86,105 @@ fi
 
 echo "Python 3.11 is ready: $(${PY} --version)"
 
-# Step 3: Build Tarball from Source
+# Step 3: Compile Frontend Assets (JS/CSS via Webpack)
 echo ""
-echo "[Step 3] Building Airflow Tarball from Source"
+echo "[Step 3] Compiling Frontend Assets (JavaScript/CSS)"
+echo ""
+echo "The Airflow web UI requires compiled JS/CSS bundles in airflow/www/static/dist/"
+echo "These are NOT checked into the source tree - they must be built via webpack/yarn."
+echo ""
+
+WWW_DIR="${AIRFLOW_SOURCE_ROOT}/airflow/www"
+DIST_DIR="${WWW_DIR}/static/dist"
+
+# Check if dist/ already exists with content (e.g., from a previous build)
+if [ -d "${DIST_DIR}" ] && [ "$(ls -A ${DIST_DIR} 2>/dev/null)" ]; then
+    echo "WARNING: ${DIST_DIR} already exists with content."
+    echo "Cleaning it to ensure a fresh build..."
+    rm -rf "${DIST_DIR}"
+fi
+
+# Install Node.js if not available
+if ! command -v node &>/dev/null; then
+    echo "Node.js not found. Installing Node.js 18.x..."
+
+    # Detect OS for Node.js installation
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        NODE_OS_ID="${ID}"
+    else
+        NODE_OS_ID="unknown"
+    fi
+
+    case "${NODE_OS_ID}" in
+        rhel|centos|rocky|almalinux|fedora)
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+            yum install -y nodejs
+            ;;
+        ubuntu|debian)
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            ;;
+        *)
+            echo "ERROR: Cannot auto-install Node.js on ${NODE_OS_ID}."
+            echo "Please install Node.js 18+ manually and re-run."
+            exit 1
+            ;;
+    esac
+fi
+
+echo "Node.js version: $(node --version)"
+echo "npm version: $(npm --version)"
+
+# Install yarn if not available
+if ! command -v yarn &>/dev/null; then
+    echo "Installing yarn via npm..."
+    npm install -g yarn
+fi
+echo "Yarn version: $(yarn --version)"
+
+# Build frontend assets
+echo ""
+echo "Running yarn install in ${WWW_DIR}..."
+cd "${WWW_DIR}"
+yarn install --frozen-lockfile
+
+echo ""
+echo "Running yarn build (webpack production build)..."
+yarn run build
+cd "${SCRIPT_DIR}"
+
+# Verify dist/ was created with expected files
+if [ ! -d "${DIST_DIR}" ]; then
+    echo "ERROR: Frontend build failed - ${DIST_DIR} was not created!"
+    exit 1
+fi
+
+DIST_FILE_COUNT=$(find "${DIST_DIR}" -type f | wc -l)
+if [ "${DIST_FILE_COUNT}" -lt 10 ]; then
+    echo "ERROR: Frontend build appears incomplete - only ${DIST_FILE_COUNT} files in ${DIST_DIR}"
+    exit 1
+fi
+
+# Check for critical files
+if [ ! -f "${DIST_DIR}/manifest.json" ]; then
+    echo "ERROR: manifest.json not found in ${DIST_DIR} - webpack build likely failed"
+    exit 1
+fi
+
+echo ""
+echo "Frontend build successful!"
+echo "Files in ${DIST_DIR}: ${DIST_FILE_COUNT}"
+echo "Key files:"
+ls -la "${DIST_DIR}/manifest.json"
+echo ""
+echo "Webpack entry points built:"
+ls "${DIST_DIR}"/*.js 2>/dev/null | head -20 || true
+echo ""
+
+# Step 4: Build Tarball from Source
+echo ""
+echo "[Step 4] Building Airflow Tarball from Source"
 
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
@@ -186,6 +282,39 @@ if [ "${INSTALLED_VERSION}" == "NOT INSTALLED" ]; then
     exit 1
 fi
 
+# Verify frontend assets were included in the installed package
+echo ""
+echo "Verifying frontend assets in installed package..."
+INSTALLED_AIRFLOW_WWW=$(${PY} -c "import airflow.www; import os; print(os.path.dirname(airflow.www.__file__))")
+INSTALLED_DIST_DIR="${INSTALLED_AIRFLOW_WWW}/static/dist"
+
+if [ ! -d "${INSTALLED_DIST_DIR}" ]; then
+    echo "ERROR: Frontend assets NOT found in installed package at ${INSTALLED_DIST_DIR}"
+    echo "The pip install did not include the compiled JS/CSS files."
+    echo "This means the Airflow web UI will be broken."
+    deactivate
+    exit 1
+fi
+
+INSTALLED_DIST_COUNT=$(find "${INSTALLED_DIST_DIR}" -type f | wc -l)
+echo "Frontend assets in installed package: ${INSTALLED_DIST_COUNT} files"
+
+if [ "${INSTALLED_DIST_COUNT}" -lt 10 ]; then
+    echo "ERROR: Only ${INSTALLED_DIST_COUNT} frontend files found - expected many more."
+    echo "Contents of ${INSTALLED_DIST_DIR}:"
+    ls -la "${INSTALLED_DIST_DIR}/"
+    deactivate
+    exit 1
+fi
+
+if [ ! -f "${INSTALLED_DIST_DIR}/manifest.json" ]; then
+    echo "ERROR: manifest.json not found in installed package's dist directory"
+    deactivate
+    exit 1
+fi
+
+echo "Frontend assets verified OK (${INSTALLED_DIST_COUNT} files including manifest.json)"
+
 # List installed packages for reference
 echo ""
 echo "Installed packages:"
@@ -199,11 +328,58 @@ venv-pack -o "${SCRIPT_DIR}/${TARBALL_NAME}"
 
 deactivate
 
+# Step 5: Verify Tarball Contents
+echo ""
+echo "[Step 5] Verifying Tarball Contents"
+echo ""
+
+TARBALL_PATH="${SCRIPT_DIR}/${TARBALL_NAME}"
+
+# Save file listing for diffing
+TARBALL_FILELIST="${SCRIPT_DIR}/${TARBALL_NAME%.tar.gz}_filelist.txt"
+tar tzf "${TARBALL_PATH}" | sort > "${TARBALL_FILELIST}"
+echo "Full file listing saved to: ${TARBALL_FILELIST}"
+
+# Check for critical frontend files
+echo ""
+echo "Checking for frontend assets in tarball..."
+JS_COUNT=$(tar tzf "${TARBALL_PATH}" | grep -c 'www/static/dist/.*\.js$' || true)
+CSS_COUNT=$(tar tzf "${TARBALL_PATH}" | grep -c 'www/static/dist/.*\.css$' || true)
+MANIFEST_COUNT=$(tar tzf "${TARBALL_PATH}" | grep -c 'www/static/dist/manifest\.json$' || true)
+
+echo "  JS files in static/dist/:  ${JS_COUNT}"
+echo "  CSS files in static/dist/: ${CSS_COUNT}"
+echo "  manifest.json:             ${MANIFEST_COUNT}"
+
+if [ "${JS_COUNT}" -lt 5 ]; then
+    echo ""
+    echo "WARNING: Only ${JS_COUNT} JS files found in tarball! Expected 15+."
+    echo "The Airflow web UI may be broken."
+fi
+
+if [ "${MANIFEST_COUNT}" -eq 0 ]; then
+    echo ""
+    echo "ERROR: manifest.json NOT found in tarball! The Airflow web UI WILL be broken."
+    exit 1
+fi
+
+# Show the frontend files for manual inspection
+echo ""
+echo "Frontend files in tarball:"
+tar tzf "${TARBALL_PATH}" | grep 'www/static/dist/' | head -40
+
 echo ""
 echo "============================================"
 echo "Successfully created ${TARBALL_NAME}"
-echo "Location: ${SCRIPT_DIR}/${TARBALL_NAME}"
+echo "Location: ${TARBALL_PATH}"
+echo "File listing: ${TARBALL_FILELIST}"
 echo ""
 echo "This tarball was built from LOCAL SOURCE CODE"
 echo "Any local patches in ${AIRFLOW_SOURCE_ROOT} are included"
+echo ""
+echo "Frontend assets: ${JS_COUNT} JS + ${CSS_COUNT} CSS files"
+echo ""
+echo "To diff with another tarball:"
+echo "  tar tzf other_tarball.tar.gz | sort > other_filelist.txt"
+echo "  diff ${TARBALL_FILELIST} other_filelist.txt"
 echo "============================================"
