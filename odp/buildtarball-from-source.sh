@@ -340,12 +340,12 @@ TARBALL_FILELIST="${SCRIPT_DIR}/${TARBALL_NAME%.tar.gz}_filelist.txt"
 tar tzf "${TARBALL_PATH}" | sort > "${TARBALL_FILELIST}"
 echo "Full file listing saved to: ${TARBALL_FILELIST}"
 
-# Check for critical frontend files
+# Check for critical frontend files (use saved file listing to avoid broken-pipe with pipefail)
 echo ""
 echo "Checking for frontend assets in tarball..."
-JS_COUNT=$(tar tzf "${TARBALL_PATH}" | grep -c 'www/static/dist/.*\.js$' || true)
-CSS_COUNT=$(tar tzf "${TARBALL_PATH}" | grep -c 'www/static/dist/.*\.css$' || true)
-MANIFEST_COUNT=$(tar tzf "${TARBALL_PATH}" | grep -c 'www/static/dist/manifest\.json$' || true)
+JS_COUNT=$(grep -c 'www/static/dist/.*\.js$' "${TARBALL_FILELIST}" || true)
+CSS_COUNT=$(grep -c 'www/static/dist/.*\.css$' "${TARBALL_FILELIST}" || true)
+MANIFEST_COUNT=$(grep -c 'www/static/dist/manifest\.json$' "${TARBALL_FILELIST}" || true)
 
 echo "  JS files in static/dist/:  ${JS_COUNT}"
 echo "  CSS files in static/dist/: ${CSS_COUNT}"
@@ -363,10 +363,6 @@ if [ "${MANIFEST_COUNT}" -eq 0 ]; then
     exit 1
 fi
 
-# Show the frontend files for manual inspection
-echo ""
-echo "Frontend files in tarball:"
-tar tzf "${TARBALL_PATH}" | grep 'www/static/dist/' | head -40
 
 echo ""
 echo "============================================"
