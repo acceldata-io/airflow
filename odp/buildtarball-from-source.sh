@@ -64,27 +64,28 @@ else
     echo "Skipping prerequisites installation..."
 fi
 
-# Step 2: Install Python 3.11
+# Step 2: Install Python 3.8
 echo ""
-echo "[Step 2] Installing Python 3.11"
+echo "[Step 2] Installing Python 3.8"
 
-PYTHON_SCRIPT="${SCRIPT_DIR}/install_python311.sh"
+
+PYTHON_SCRIPT="${SCRIPT_DIR}/install_python38.sh"
 if [ -f "${PYTHON_SCRIPT}" ]; then
-    echo "Running install_python311.sh..."
+    echo "Running install_python38.sh..."
     chmod +x "${PYTHON_SCRIPT}"
     bash "${PYTHON_SCRIPT}"
 else
-    echo "ERROR: install_python311.sh not found at ${PYTHON_SCRIPT}"
+    echo "ERROR: install_python38.sh not found at ${PYTHON_SCRIPT}"
     exit 1
 fi
 
-# Verify Python 3.11 is available
+# Verify Python 3.8 is available
 if ! command -v ${PY} &>/dev/null; then
     echo "ERROR: ${PY} is not available after installation"
     exit 1
 fi
 
-echo "Python 3.11 is ready: $(${PY} --version)"
+echo "Python 3.8 is ready: $(${PY} --version)"
 
 # Step 3: Compile Frontend Assets (JS/CSS via Webpack)
 echo ""
