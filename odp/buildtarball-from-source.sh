@@ -9,8 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AIRFLOW_SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Configuration
-PY=python3.11
-PY_VERSION=3.11
+PY=python3.8
+PY_VERSION=3.8
 
 # Read versions from VERSION file (format: AIRFLOW_VERSION.ODP_VERSION, e.g. 2.8.3.3.3.6.3-SNAPSHOT)
 ODP_VERSION=$(cat "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')
