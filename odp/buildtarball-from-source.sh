@@ -233,6 +233,11 @@ echo ""
 # Define the extras we want (same as original requirements.txt but without 'mysql' which pulls mysqlclient)
 AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password"
 
+# Pin google-re2 to 1.1 (the last version compatible with Python 3.8, uses pybind11)
+# Latest versions require abseil-cpp headers and Python >= 3.9
+echo "Pre-installing google-re2==1.1 (Python 3.8 compatible)..."
+pip install "google-re2==1.1" --no-cache-dir
+
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
 pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
