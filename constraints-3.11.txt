@@ -1,6 +1,6 @@
 
 #
-# This constraints file was automatically generated on 2026-03-23T07:29:59.312097
+# This constraints file was automatically generated on 2026-03-23T13:55:13.773986
 # via `uv pip install --resolution highest` for the "main" branch of Airflow.
 # This variant of constraints install uses the HEAD of the branch version for 'apache-airflow' but installs
 # the providers from PIP-released packages at the moment of the constraint generation.
@@ -224,7 +224,7 @@ azure-servicebus==7.14.3
 azure-storage-blob==12.28.0
 azure-storage-file-datalake==12.23.0
 azure-storage-file-share==12.24.0
-azure-synapse-artifacts==0.21.0
+azure-synapse-artifacts==0.22.0
 azure-synapse-spark==0.7.0
 babel==2.18.0
 backoff==2.2.1
@@ -240,7 +240,7 @@ boto3==1.42.70
 botocore==1.42.70
 cachelib==0.13.0
 cachetools==6.2.6
-cadwyn==6.1.0
+cadwyn==6.1.1
 cassandra-driver==3.29.3
 cattrs==26.1.0
 celery==5.6.2
@@ -261,7 +261,7 @@ colorlog==6.10.1
 comm==0.2.3
 confluent-kafka==2.13.2
 crcmod==1.7
-cron_descriptor==2.0.6
+cron_descriptor==2.0.8
 croniter==6.2.2
 cryptography==44.0.3
 curlify==3.0.0
@@ -356,7 +356,7 @@ google-cloud-spanner==3.63.0
 google-cloud-speech==2.37.0
 google-cloud-storage-control==1.10.0
 google-cloud-storage-transfer==1.19.0
-google-cloud-storage==3.10.0
+google-cloud-storage==3.10.1
 google-cloud-tasks==2.21.0
 google-cloud-texttospeech==2.34.0
 google-cloud-translate==3.24.0
