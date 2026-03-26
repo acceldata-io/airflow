@@ -1,6 +1,6 @@
 
 #
-# This constraints file was automatically generated on 2026-03-26T02:58:01.271122
+# This constraints file was automatically generated on 2026-03-26T10:16:42.846275
 # via `uv pip install --resolution highest` for the "main" branch of Airflow.
 # This variant of constraints install uses the HEAD of the branch version for 'apache-airflow' but installs
 # the providers from PIP-released packages at the moment of the constraint generation.
@@ -75,16 +75,13 @@ aiosmtplib==5.1.0
 aiosqlite==0.21.0
 airbyte-api==0.53.0
 alembic==1.18.4
-alibabacloud-adb20211201==3.7.0
+alibabacloud-adb20211201==3.7.1
 alibabacloud-credentials-api==1.0.0
 alibabacloud-credentials==1.0.8
-alibabacloud-openapi-util==0.2.4
+alibabacloud-tea-openapi==0.4.4
 alibabacloud-tea-util==0.3.14
 alibabacloud-tea==0.4.3
-alibabacloud_endpoint_util==0.0.4
 alibabacloud_gateway_spi==0.0.3
-alibabacloud_tea_openapi==0.3.16
-alibabacloud_tea_xml==0.0.3
 aliyun-python-sdk-core==2.16.0
 aliyun-python-sdk-kms==2.16.5
 amqp==5.3.1
@@ -166,6 +163,7 @@ cron_descriptor==2.0.8
 croniter==6.2.2
 cryptography==46.0.6
 curlify==3.0.0
+darabonba-core==1.0.5
 databricks-sql-connector==4.2.5
 dataclasses-json==0.6.7
 datadog==0.52.1
@@ -181,7 +179,7 @@ docker==7.1.0
 docopt==0.6.2
 docstring_parser==0.17.0
 durationpy==0.10
-ecdsa==0.19.1
+ecdsa==0.19.2
 elastic-transport==9.2.1
 elasticsearch==9.3.0
 email-validator==2.3.0
