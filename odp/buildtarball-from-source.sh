@@ -229,17 +229,26 @@ echo ""
 echo "NOTE: You should see 'Processing ${AIRFLOW_SOURCE_ROOT}' below (NOT 'Downloading apache-airflow')"
 echo ""
 
-# Define the extras we want (same as original requirements.txt but without 'mysql' which pulls mysqlclient)
 AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password"
 
-# Install Airflow from source with extras
-# Using --no-build-isolation to use already installed build dependencies
-pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+# Use official Airflow constraints to pin dependency versions
+CONSTRAINTS_FILE="${SCRIPT_DIR}/constraints-${PY_VERSION}.txt"
 
-# Install additional dependencies from requirements-source.txt
+if [ -f "${CONSTRAINTS_FILE}" ]; then
+    echo "Using constraints file: ${CONSTRAINTS_FILE}"
+    pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
+else
+    echo "WARNING: No constraints file found, dependency versions may vary"
+    pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+fi
+
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}"
+if [ -f "${CONSTRAINTS_FILE}" ]; then
+    pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
+else
+    pip install -r "${REQUIREMENTS_FILE}"
+fi
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
