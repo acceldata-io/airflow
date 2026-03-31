@@ -250,6 +250,10 @@ echo "============================================"
 case "${OS_ID}" in
     rhel|centos|rocky|almalinux|fedora)
         install_rhel_prereqs
+        # Install missing packages from AlmaLinux CRB for UBI9
+        if is_ubi_container || [[ -f /etc/yum.repos.d/ubi.repo ]]; then
+            install_ubi9_missing_packages
+        fi
         ;;
     ubuntu|debian)
         install_ubuntu_prereqs
