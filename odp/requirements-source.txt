@@ -2,6 +2,7 @@
 # Versions constrained by constraints-3.11.txt (except PyMySQL)
 
 PyMySQL==1.1.1
+setuptools==69.1.0
 apache-airflow-providers-cncf-kubernetes
 connexion[swagger-ui]
 numpy
