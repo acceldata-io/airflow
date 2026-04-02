@@ -3,7 +3,10 @@
 
 PyMySQL==1.1.1
 setuptools==69.1.0
+apache-airflow-providers-celery
 apache-airflow-providers-cncf-kubernetes
+apache-airflow-providers-apache-spark
+apache-airflow-providers-trino
 connexion[swagger-ui]
 numpy
 pandas
