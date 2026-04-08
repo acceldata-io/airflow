@@ -3,7 +3,6 @@
 # Only pin versions here for packages NOT in the constraints file
 
 PyMySQL==1.1.1
-setuptools==69.1.0
 apache-airflow-providers-celery
 apache-airflow-providers-cncf-kubernetes
 apache-airflow-providers-apache-spark
@@ -157,7 +156,6 @@ asn1crypto
 async-timeout
 asyncssh
 Authlib
-backports.zoneinfo
 beautifulsoup4
 cattrs
 chardet
