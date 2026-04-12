@@ -238,14 +238,27 @@ AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres
 echo "Pre-installing google-re2==1.1 (Python 3.8 compatible)..."
 pip install "google-re2==1.1" --no-cache-dir
 
+# Use official Airflow constraints to pin dependency versions (constraints-${PY_VERSION}.txt)
+CONSTRAINTS_FILE="${SCRIPT_DIR}/constraints-${PY_VERSION}.txt"
+
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
-pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+if [ -f "${CONSTRAINTS_FILE}" ]; then
+    echo "Using constraints file: ${CONSTRAINTS_FILE}"
+    pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
+else
+    echo "WARNING: No constraints file found at ${CONSTRAINTS_FILE}, dependency versions may vary"
+    pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+fi
 
 # Install additional dependencies from requirements-source.txt
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}"
+if [ -f "${CONSTRAINTS_FILE}" ]; then
+    pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
+else
+    pip install -r "${REQUIREMENTS_FILE}"
+fi
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
