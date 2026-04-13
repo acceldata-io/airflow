@@ -48,10 +48,13 @@ install_nodejs18_centos7() {
     local nvm_sh="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
     if [[ -s "${nvm_sh}" ]]; then
         echo "Loading nvm from ${nvm_sh} and running nvm deactivate"
+        # nvm.sh is not set -e safe; temporarily disable errexit while loading it
+        set +e
         # shellcheck source=/dev/null
         . "${nvm_sh}"
-        nvm deactivate 2>/dev/null || true
-        hash -r 2>/dev/null || true
+        nvm deactivate 2>/dev/null
+        hash -r 2>/dev/null
+        set -e
     fi
 
     if command -v node >/dev/null 2>&1 && node -v 2>/dev/null | grep -qE '^v(18|20|22)\.'; then
