@@ -101,6 +101,14 @@ install_ubi9_missing_packages() {
     else
         echo "re2-devel already installed"
     fi
+
+    # Hard-fail if the critical package is still missing after all attempts
+    if ! rpm -q xmlsec1-devel &>/dev/null; then
+        echo "ERROR: Required package 'xmlsec1-devel' could not be installed on EL9."
+        echo "Enable the CRB/CodeReady Builder repository and install 'xmlsec1-devel'"
+        echo "using the system package manager, then rerun this script."
+        exit 1
+    fi
 }
 
 # -----------------------------

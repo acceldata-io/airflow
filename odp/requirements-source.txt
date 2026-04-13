@@ -26,7 +26,7 @@ pydantic
 backoff
 
 virtualenv
-venv-pack
+venv-pack==0.2.0
 
 # Additional packages aligned with apache/airflow:2.8.1 production image
 # (packages not always pulled by the minimal ODP extras set)
@@ -148,7 +148,7 @@ pydata-google-auth
 db-dtypes
 elastic-transport
 elasticsearch
-PyAthena
+PyAthena==3.0.10
 pyodbc
 redshift-connector
 scramp
@@ -169,7 +169,7 @@ chardet
 docker
 exceptiongroup
 graphviz
-grpc-interceptor
+grpc-interceptor==0.15.4
 grpcio-gcp
 httplib2
 hvac

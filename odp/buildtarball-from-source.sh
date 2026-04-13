@@ -56,9 +56,15 @@ echo "[Step 1] Installing Prerequisites"
 
 PREREQS_SCRIPT="${SCRIPT_DIR}/install_prereqs.sh"
 if [ -f "${PREREQS_SCRIPT}" ]; then
-    echo "Running install_prereqs.sh (sourced so PATH changes persist)..."
+    echo "Running install_prereqs.sh..."
     chmod +x "${PREREQS_SCRIPT}"
-    source "${PREREQS_SCRIPT}"
+    bash "${PREREQS_SCRIPT}"
+    # Refresh command hash and ensure /usr/local/bin is on PATH, (prereqs may install Node.js there via install_nodejs18_centos7)
+    case ":${PATH}:" in
+        *":/usr/local/bin:"*) ;;
+        *) export PATH="/usr/local/bin:${PATH}" ;;
+    esac
+    hash -r 2>/dev/null || true
 else
     echo "WARNING: install_prereqs.sh not found at ${PREREQS_SCRIPT}"
     echo "Skipping prerequisites installation..."

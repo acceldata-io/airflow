@@ -41,6 +41,8 @@ install_nodejs18_centos7() {
     local INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local}"
     local name="node-v${NODE_VERSION}-linux-x64-glibc-217"
     local url="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/${name}.tar.xz"
+    local shasums_url="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/SHASUMS256.txt"
+
     # nvm is a bash function (not a binary) — it's inherited in interactive shells but NOT
     # in scripts. We must source nvm.sh to load the function, then deactivate it.
     local nvm_sh="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
@@ -61,9 +63,37 @@ install_nodejs18_centos7() {
     local tmp
     tmp="$(mktemp -d)"
     curl -fsSL -o "${tmp}/node.tar.xz" "${url}"
+
+    echo "Verifying SHA256 checksum..."
+    curl -fsSL -o "${tmp}/SHASUMS256.txt" "${shasums_url}"
+    local expected_sha256 actual_sha256
+    expected_sha256="$(grep "${name}.tar.xz" "${tmp}/SHASUMS256.txt" | awk '{print $1}')"
+    if [[ -z "${expected_sha256}" ]]; then
+        echo "ERROR: Could not find checksum for ${name}.tar.xz in SHASUMS256.txt"
+        rm -rf "${tmp}"
+        return 1
+    fi
+    actual_sha256="$(sha256sum "${tmp}/node.tar.xz" | awk '{print $1}')"
+    if [[ "${actual_sha256}" != "${expected_sha256}" ]]; then
+        echo "ERROR: SHA256 checksum mismatch for Node.js ${NODE_VERSION}"
+        echo "  Expected: ${expected_sha256}"
+        echo "  Actual:   ${actual_sha256}"
+        rm -rf "${tmp}"
+        return 1
+    fi
+    echo "Checksum verified OK."
+
+    local node_dir="${INSTALL_PREFIX}/lib/nodejs/${name}"
+    mkdir -p "${node_dir}"
     tar -xf "${tmp}/node.tar.xz" -C "${tmp}"
-    cp -r "${tmp}/${name}/"* "${INSTALL_PREFIX}/"
+    cp -r "${tmp}/${name}/"* "${node_dir}/"
     rm -rf "${tmp}"
+
+    mkdir -p "${INSTALL_PREFIX}/bin"
+    ln -sf "${node_dir}/bin/node" "${INSTALL_PREFIX}/bin/node"
+    ln -sf "${node_dir}/bin/npm"  "${INSTALL_PREFIX}/bin/npm"
+    ln -sf "${node_dir}/bin/npx"  "${INSTALL_PREFIX}/bin/npx"
+
     hash -r 2>/dev/null || true
     echo "Node.js $(node --version) / npm $(npm --version)"
 }
