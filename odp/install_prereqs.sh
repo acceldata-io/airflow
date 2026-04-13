@@ -41,9 +41,13 @@ install_nodejs18_centos7() {
     local INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local}"
     local name="node-v${NODE_VERSION}-linux-x64-glibc-217"
     local url="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/${name}.tar.xz"
-    # If nvm is loaded, deactivate so its Node (which needs newer glibc) is off PATH
-    if nvm --version >/dev/null 2>&1; then
-        echo "nvm detected ($(nvm --version | head -n1)); running nvm deactivate"
+    # nvm is a bash function (not a binary) — it's inherited in interactive shells but NOT
+    # in scripts. We must source nvm.sh to load the function, then deactivate it.
+    local nvm_sh="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+    if [[ -s "${nvm_sh}" ]]; then
+        echo "Loading nvm from ${nvm_sh} and running nvm deactivate"
+        # shellcheck source=/dev/null
+        . "${nvm_sh}"
         nvm deactivate 2>/dev/null || true
         hash -r 2>/dev/null || true
     fi
