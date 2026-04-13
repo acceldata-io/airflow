@@ -4,6 +4,7 @@
 # Supported OS: RHEL/CentOS 8+, Ubuntu 20.04/22.04
 # NOTE: CentOS 7 is NOT supported for Python 3.11 tarball builds.
 #       For CentOS 7 / Python 3.8 builds, use the -2 branch.
+# On CentOS 7, install Node.js 18 via unofficial glibc-217 build (for yarn/webpack UI builds).
 
 set -euo pipefail
 
@@ -34,7 +35,27 @@ detect_os() {
     fi
 }
 
+# CentOS 7 ships glibc 2.17; use Node unofficial glibc-217 builds (standard Node 18+ binaries need newer glibc).
+install_nodejs18_centos7() {
+    local NODE_VERSION="${NODE_VERSION:-18.20.5}"
+    local INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local}"
+    local name="node-v${NODE_VERSION}-linux-x64-glibc-217"
+    local url="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/${name}.tar.xz"
 
+    if command -v node >/dev/null 2>&1 && node -v 2>/dev/null | grep -qE '^v(18|20|22)\.'; then
+        echo "Node.js $(node -v) already installed; skipping unofficial Node ${NODE_VERSION}."
+        return 0
+    fi
+
+    echo "Installing Node.js ${NODE_VERSION} (linux-x64-glibc-217) into ${INSTALL_PREFIX}..."
+    local tmp
+    tmp="$(mktemp -d)"
+    curl -fsSL -o "${tmp}/node.tar.xz" "${url}"
+    tar -xf "${tmp}/node.tar.xz" -C "${tmp}"
+    cp -r "${tmp}/${name}/"* "${INSTALL_PREFIX}/"
+    rm -rf "${tmp}"
+    echo "Node.js $(node --version) / npm $(npm --version)"
+}
 
 install_rhel_prereqs() {
     echo "Detected RHEL/CentOS - using yum package manager"
@@ -112,6 +133,9 @@ echo "============================================"
 case "${OS_ID}" in
     rhel|centos|rocky|almalinux|fedora)
         install_rhel_prereqs
+        if [ "${OS_ID}" = "centos" ] && [ "${OS_VERSION_ID%%.*}" = "7" ]; then
+            install_nodejs18_centos7
+        fi
         ;;
     ubuntu)
         if [[ "${OS_VERSION_ID}" =~ ^(20|22) ]]; then
