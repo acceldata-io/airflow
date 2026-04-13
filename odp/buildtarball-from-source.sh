@@ -348,7 +348,6 @@ pip list
 # Pack the environment
 echo ""
 echo "Packing environment..."
-pip install venv-pack
 venv-pack -o "${SCRIPT_DIR}/${TARBALL_NAME}"
 
 deactivate
