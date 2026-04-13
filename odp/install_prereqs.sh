@@ -41,18 +41,15 @@ install_nodejs18_centos7() {
     local INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local}"
     local name="node-v${NODE_VERSION}-linux-x64-glibc-217"
     local url="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/${name}.tar.xz"
-    local node_bin
-
-    # If nvm is already loaded in this shell, turn it off so /usr/local Node wins
+    # If nvm is loaded, deactivate so its Node (which needs newer glibc) is off PATH
     if nvm --version >/dev/null 2>&1; then
-        echo "nvm detected ($(nvm --version | head -n1)); nvm deactivate"
+        echo "nvm detected ($(nvm --version | head -n1)); running nvm deactivate"
         nvm deactivate 2>/dev/null || true
         hash -r 2>/dev/null || true
     fi
 
-    node_bin=$(command -v node 2>/dev/null || true)
-    if [[ -n "$node_bin" && "$node_bin" != *"/.nvm/"* ]] && node -v 2>/dev/null | grep -qE '^v(18|20|22)\.'; then
-        echo "Node.js $(node -v) already installed at ${node_bin}; skipping unofficial Node ${NODE_VERSION}."
+    if command -v node >/dev/null 2>&1 && node -v 2>/dev/null | grep -qE '^v(18|20|22)\.'; then
+        echo "Node.js $(node -v) already installed; skipping unofficial Node ${NODE_VERSION}."
         return 0
     fi
 
@@ -63,6 +60,7 @@ install_nodejs18_centos7() {
     tar -xf "${tmp}/node.tar.xz" -C "${tmp}"
     cp -r "${tmp}/${name}/"* "${INSTALL_PREFIX}/"
     rm -rf "${tmp}"
+    hash -r 2>/dev/null || true
     echo "Node.js $(node --version) / npm $(npm --version)"
 }
 

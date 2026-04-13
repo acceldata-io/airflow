@@ -56,9 +56,9 @@ echo "[Step 1] Installing Prerequisites"
 
 PREREQS_SCRIPT="${SCRIPT_DIR}/install_prereqs.sh"
 if [ -f "${PREREQS_SCRIPT}" ]; then
-    echo "Running install_prereqs.sh..."
+    echo "Running install_prereqs.sh (sourced so PATH changes persist)..."
     chmod +x "${PREREQS_SCRIPT}"
-    bash "${PREREQS_SCRIPT}"
+    source "${PREREQS_SCRIPT}"
 else
     echo "WARNING: install_prereqs.sh not found at ${PREREQS_SCRIPT}"
     echo "Skipping prerequisites installation..."
