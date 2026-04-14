@@ -232,14 +232,31 @@ echo ""
 # Define the extras we want (same as original requirements.txt but without 'mysql' which pulls mysqlclient)
 AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password"
 
+# Pin google-re2 to 1.1 (the last version compatible with Python 3.11, uses pybind11)
+# Latest versions require abseil-cpp headers and Python >= 3.9
+echo "Pre-installing google-re2==1.1 (Python 3.11 compatible)..."
+pip install "google-re2==1.1" --no-cache-dir
+
+# Use official Airflow 2.8.3 constraints to pin dependency versions (constraints-${PY_VERSION}.txt)
+CONSTRAINTS_FILE="${SCRIPT_DIR}/constraints-${PY_VERSION}.txt"
+
+if [ ! -f "${CONSTRAINTS_FILE}" ]; then
+    echo "ERROR: Constraints file not found at ${CONSTRAINTS_FILE}"
+    echo "This file is required for reproducible builds (Apache Airflow ${AIRFLOW_VERSION} / Python ${PY_VERSION})."
+    deactivate
+    exit 1
+fi
+
+echo "Using constraints file: ${CONSTRAINTS_FILE}"
+
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
-pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
 
 # Install additional dependencies from requirements-source.txt
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}"
+pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
@@ -323,7 +340,6 @@ pip list
 # Pack the environment
 echo ""
 echo "Packing environment..."
-pip install venv-pack
 venv-pack -o "${SCRIPT_DIR}/${TARBALL_NAME}"
 
 deactivate
