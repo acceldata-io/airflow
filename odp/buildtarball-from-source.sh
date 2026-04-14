@@ -249,22 +249,20 @@ CONSTRAINTS_FILE="${SCRIPT_DIR}/constraints-${PY_VERSION}.txt"
 
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
-if [ -f "${CONSTRAINTS_FILE}" ]; then
-    echo "Using constraints file: ${CONSTRAINTS_FILE}"
-    pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
-else
-    echo "WARNING: No constraints file found at ${CONSTRAINTS_FILE}, dependency versions may vary"
-    pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+if [ ! -f "${CONSTRAINTS_FILE}" ]; then
+    echo "ERROR: Constraints file not found at ${CONSTRAINTS_FILE}"
+    echo "This file is required for reproducible builds."
+    deactivate
+    exit 1
 fi
+
+echo "Using constraints file: ${CONSTRAINTS_FILE}"
+pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
 
 # Install additional dependencies from requirements-source.txt
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-if [ -f "${CONSTRAINTS_FILE}" ]; then
-    pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
-else
-    pip install -r "${REQUIREMENTS_FILE}"
-fi
+pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
