@@ -148,7 +148,6 @@ pydata-google-auth
 db-dtypes
 elastic-transport
 elasticsearch
-PyAthena==3.0.10
 pyodbc
 redshift-connector
 scramp
