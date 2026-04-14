@@ -1,50 +1,199 @@
-# Additional Dependencies for Source-Built Airflow Tarball
-# Note: apache-airflow is NOT included here - it's installed from local source
-# Python Version: 3.8
-# Versions aligned with requirements.txt and Airflow 2.8.1 constraints-3.8.txt
+# Additional dependencies for source-built Airflow tarball
+# Versions are controlled by constraints-3.8.txt (passed via --constraint flag)
+# Only pin versions here for packages NOT in the constraints file
 
-# Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
 PyMySQL==1.1.1
 
-# Pin google-re2 to 1.1 (last version compatible with Python 3.8, uses pybind11)
-google-re2==1.1
+apache-airflow-providers-celery
+apache-airflow-providers-cncf-kubernetes
+apache-airflow-providers-apache-spark
+apache-airflow-providers-trino
+apache-airflow-providers-ssh
+apache-airflow-providers-apache-sqoop==4.2.1
+connexion[swagger-ui]
 
-# Pin versions to match production Python 3.8 environment (from requirements.txt)
-aiofiles==24.1.0
-cachetools==5.5.2
-distlib==0.3.9
-filelock==3.16.1
-google-auth==2.38.0
-kubernetes==30.1.0
-kubernetes-asyncio==30.1.0
-platformdirs==4.3.6
-requests-oauthlib==2.0.0
-websocket-client==1.8.0
+numpy
+pandas
 
-# Swagger UI support
-connexion[swagger-ui]==2.14.2
+lxml
+xmlsec
 
-# Kubernetes provider (matching existing env)
-apache-airflow-providers-cncf-kubernetes==8.4.2
+Markdown
+docutils
 
-# Data processing (pinned to last Python 3.8 compatible versions)
-numpy==1.24.4
-pandas==2.0.3
+pydantic
 
-# XML processing and security (from requirements.txt)
-lxml==5.3.1
-xmlsec==1.3.14
+backoff
 
-# Markdown/doc rendering (used by Airflow web UI for DAG docs)
-Markdown==3.5.2
-docutils==0.20.1
+virtualenv
+venv-pack==0.2.0
 
-# Data validation (from Airflow 2.8.1 constraints-3.8)
-pydantic==2.5.3
+# Additional packages aligned with apache/airflow:2.8.1 production image
+# (packages not always pulled by the minimal ODP extras set)
 
-# Retry logic (from Airflow 2.8.1 constraints-3.8)
-backoff==2.2.1
+# Airflow Providers
+apache-airflow-providers-amazon
+apache-airflow-providers-docker
+apache-airflow-providers-elasticsearch
+apache-airflow-providers-google
+apache-airflow-providers-grpc
+apache-airflow-providers-hashicorp
+apache-airflow-providers-microsoft-azure
+apache-airflow-providers-odbc
+apache-airflow-providers-sendgrid
+apache-airflow-providers-sftp
+apache-airflow-providers-slack
+apache-airflow-providers-snowflake
 
-# Environment packing
-virtualenv==20.25.0
-venv-pack
+# AWS
+adal
+adlfs
+aiobotocore
+aioitertools
+boto3
+botocore
+s3transfer
+watchtower
+
+# Azure
+azure-batch
+azure-common
+azure-core
+azure-cosmos
+azure-datalake-store
+azure-identity
+azure-keyvault-secrets
+azure-kusto-data
+azure-mgmt-containerinstance
+azure-mgmt-containerregistry
+azure-mgmt-core
+azure-mgmt-cosmosdb
+azure-mgmt-datafactory
+azure-mgmt-datalake-nspkg
+azure-mgmt-datalake-store
+azure-mgmt-nspkg
+azure-mgmt-resource
+azure-mgmt-storage
+azure-nspkg
+azure-servicebus
+azure-storage-blob
+azure-storage-file-datalake
+azure-storage-file-share
+azure-synapse-artifacts
+azure-synapse-spark
+msal
+msal-extensions
+msrest
+msrestazure
+
+# Google Cloud
+gcloud-aio-auth
+gcloud-aio-bigquery
+gcloud-aio-storage
+gcsfs
+google-ads
+google-analytics-admin
+google-api-core
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+google-cloud-aiplatform
+google-cloud-appengine-logging
+google-cloud-audit-log
+google-cloud-automl
+google-cloud-batch
+google-cloud-bigquery
+google-cloud-bigquery-datatransfer
+google-cloud-bigtable
+google-cloud-build
+google-cloud-compute
+google-cloud-container
+google-cloud-core
+google-cloud-datacatalog
+google-cloud-dataflow-client
+google-cloud-dataform
+google-cloud-dataplex
+google-cloud-dataproc
+google-cloud-dataproc-metastore
+google-cloud-dlp
+google-cloud-kms
+google-cloud-language
+google-cloud-logging
+google-cloud-memcache
+google-cloud-monitoring
+google-cloud-orchestration-airflow
+google-cloud-os-login
+google-cloud-pubsub
+google-cloud-redis
+google-cloud-resource-manager
+google-cloud-run
+google-cloud-secret-manager
+google-cloud-spanner
+google-cloud-speech
+google-cloud-storage
+google-cloud-storage-transfer
+google-cloud-tasks
+google-cloud-texttospeech
+google-cloud-translate
+google-cloud-videointelligence
+google-cloud-vision
+google-cloud-workflows
+google-crc32c
+google-resumable-media
+grpc-google-iam-v1
+pandas-gbq
+pydata-google-auth
+
+# Database connectors
+db-dtypes
+elastic-transport
+elasticsearch
+PyAthena==3.0.10
+pyodbc
+redshift-connector
+scramp
+snowflake-connector-python
+snowflake-sqlalchemy
+sqlalchemy-bigquery
+sqlalchemy-redshift
+sqlalchemy-spanner
+
+# Other utilities
+asn1crypto
+async-timeout
+asyncssh
+Authlib
+beautifulsoup4
+cattrs
+chardet
+docker
+exceptiongroup
+graphviz
+grpc-interceptor==0.15.4
+grpcio-gcp
+httplib2
+hvac
+ijson
+importlib-resources
+isodate
+jmespath
+json-merge-patch
+jsonpath-ng
+looker-sdk
+pkgutil_resolve_name
+ply
+portalocker
+proto-plus
+pyarrow
+pyOpenSSL
+pyparsing
+python-dotenv
+python-http-client
+sendgrid
+shapely
+slack_sdk
+sortedcontainers
+soupsieve
+starkbank-ecdsa
+tomlkit
+uritemplate

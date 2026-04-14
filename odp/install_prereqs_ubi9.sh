@@ -101,6 +101,14 @@ install_ubi9_missing_packages() {
     else
         echo "re2-devel already installed"
     fi
+
+    # Hard-fail if the critical package is still missing after all attempts
+    if ! rpm -q xmlsec1-devel &>/dev/null; then
+        echo "ERROR: Required package 'xmlsec1-devel' could not be installed on EL9."
+        echo "Enable the CRB/CodeReady Builder repository and install 'xmlsec1-devel'"
+        echo "using the system package manager, then rerun this script."
+        exit 1
+    fi
 }
 
 # -----------------------------
@@ -250,6 +258,10 @@ echo "============================================"
 case "${OS_ID}" in
     rhel|centos|rocky|almalinux|fedora)
         install_rhel_prereqs
+        # Install missing CRB packages for EL9 (UBI9, Rocky 9, Alma 9, RHEL 9)
+        if [[ "${OS_VERSION_ID%%.*}" == "9" ]] && ! rpm -q xmlsec1-devel &>/dev/null; then
+            install_ubi9_missing_packages
+        fi
         ;;
     ubuntu|debian)
         install_ubuntu_prereqs
