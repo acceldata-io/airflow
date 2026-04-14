@@ -59,6 +59,12 @@ if [ -f "${PREREQS_SCRIPT}" ]; then
     echo "Running install_prereqs.sh..."
     chmod +x "${PREREQS_SCRIPT}"
     bash "${PREREQS_SCRIPT}"
+    # Refresh command hash and ensure /usr/local/bin is on PATH, (prereqs may install Node.js there via install_nodejs18_centos7)
+    case ":${PATH}:" in
+        *":/usr/local/bin:"*) ;;
+        *) export PATH="/usr/local/bin:${PATH}" ;;
+    esac
+    hash -r 2>/dev/null || true
 else
     echo "WARNING: install_prereqs.sh not found at ${PREREQS_SCRIPT}"
     echo "Skipping prerequisites installation..."
@@ -238,14 +244,25 @@ AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres
 echo "Pre-installing google-re2==1.1 (Python 3.8 compatible)..."
 pip install "google-re2==1.1" --no-cache-dir
 
+# Use official Airflow constraints to pin dependency versions (constraints-${PY_VERSION}.txt)
+CONSTRAINTS_FILE="${SCRIPT_DIR}/constraints-${PY_VERSION}.txt"
+
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
-pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+if [ ! -f "${CONSTRAINTS_FILE}" ]; then
+    echo "ERROR: Constraints file not found at ${CONSTRAINTS_FILE}"
+    echo "This file is required for reproducible builds."
+    deactivate
+    exit 1
+fi
+
+echo "Using constraints file: ${CONSTRAINTS_FILE}"
+pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
 
 # Install additional dependencies from requirements-source.txt
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}"
+pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
@@ -329,7 +346,6 @@ pip list
 # Pack the environment
 echo ""
 echo "Packing environment..."
-pip install venv-pack
 venv-pack -o "${SCRIPT_DIR}/${TARBALL_NAME}"
 
 deactivate
