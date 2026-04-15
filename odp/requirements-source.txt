@@ -10,7 +10,7 @@ apache-airflow-providers-apache-spark
 apache-airflow-providers-trino
 apache-airflow-providers-ssh
 apache-airflow-providers-apache-sqoop==4.2.1
-connexion[swagger-ui]
+connexion
 
 numpy
 pandas
