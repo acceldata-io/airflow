@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install prerequisites for Apache Airflow
 # Run this script as root
-# Supported OS: RHEL 8, RHEL 9, Ubuntu 20.04/22.04
+# Supported OS: RHEL 8, RHEL 9, UBI9, Ubuntu 20.04/22.04
 # NOTE: CentOS 7 is NOT supported for Python 3.11 tarball builds.
 #       For CentOS 7 / Python 3.8 builds, use the -2 branch.
 
@@ -76,6 +76,17 @@ install_ubuntu_prereqs() {
 }
 
 # Main
+
+# Check for UBI9 first - if detected, use the dedicated UBI9 script
+if [ -f /etc/yum.repos.d/ubi.repo ]; then
+    echo "============================================"
+    echo "Detected UBI9 (Red Hat Universal Base Image 9)"
+    echo "Running dedicated UBI9 prerequisites script..."
+    echo "============================================"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    exec bash "${SCRIPT_DIR}/install_prereqs_ubi9.sh"
+fi
+
 detect_os
 
 echo "============================================"

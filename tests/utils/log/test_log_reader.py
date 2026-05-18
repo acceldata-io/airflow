@@ -121,6 +121,7 @@ class TestLogView:
         session.delete(log_template)
         session.commit()
 
+    @conf_vars({("core", "use_historical_filename_templates"): "True"})
     def test_test_read_log_chunks_should_read_one_try(self):
         task_log_reader = TaskLogReader()
         ti = copy.copy(self.ti)
@@ -136,6 +137,7 @@ class TestLogView:
         ]
         assert metadatas == {"end_of_log": True, "log_pos": 13}
 
+    @conf_vars({("core", "use_historical_filename_templates"): "True"})
     def test_test_read_log_chunks_should_read_all_files(self):
         task_log_reader = TaskLogReader()
         ti = copy.copy(self.ti)
@@ -170,6 +172,7 @@ class TestLogView:
         ]
         assert metadatas == {"end_of_log": True, "log_pos": 13}
 
+    @conf_vars({("core", "use_historical_filename_templates"): "True"})
     def test_test_test_read_log_stream_should_read_one_try(self):
         task_log_reader = TaskLogReader()
         ti = copy.copy(self.ti)
@@ -181,6 +184,7 @@ class TestLogView:
             "try_number=1.\n"
         ]
 
+    @conf_vars({("core", "use_historical_filename_templates"): "True"})
     def test_test_test_read_log_stream_should_read_all_logs(self):
         task_log_reader = TaskLogReader()
         self.ti.state = TaskInstanceState.SUCCESS  # Ensure mocked instance is completed to return stream
@@ -263,6 +267,7 @@ class TestLogView:
         mock_prop.return_value = True
         assert task_log_reader.supports_external_link
 
+    @conf_vars({("core", "use_historical_filename_templates"): "True"})
     def test_task_log_filename_unique(self, dag_maker):
         """Ensure the default log_filename_template produces a unique filename.
 
