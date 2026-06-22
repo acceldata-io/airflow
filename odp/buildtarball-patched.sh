@@ -128,6 +128,10 @@ sed -i '/^websocket-client/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 
+# CVE fix: bump gunicorn off 21.2.0 (CVE-2024-6827 TE.CL request smuggling, also CVE-2024-1135).
+# 22.0.0 is the upstream patched version, supports Python 3.8, satisfies airflow's gunicorn>=20.1.0.
+sed -i 's/^gunicorn==.*/gunicorn==22.0.0/' "${LOCAL_CONSTRAINTS}"
+
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
 

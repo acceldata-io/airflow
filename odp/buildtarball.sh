@@ -115,6 +115,10 @@ sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 # Remove google-re2 constraint to allow fresh build with re2-devel
 sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 
+# CVE fix: bump gunicorn off 21.2.0 (CVE-2024-6827 TE.CL request smuggling, also CVE-2024-1135).
+# 22.0.0 is the upstream patched version, supports Python 3.8, satisfies airflow's gunicorn>=20.1.0.
+sed -i 's/^gunicorn==.*/gunicorn==22.0.0/' "${LOCAL_CONSTRAINTS}"
+
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
