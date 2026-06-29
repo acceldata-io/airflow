@@ -27,7 +27,7 @@ detect_os() {
 }
 
 # Check if Python 3.14 is already installed and working
-check_python311() {
+check_python314() {
     if command -v python${PYTHON_MAJOR_MINOR} &>/dev/null; then
         INSTALLED_PY_VERSION=$(python${PYTHON_MAJOR_MINOR} --version 2>&1 | awk '{print $2}')
         echo "Found Python ${INSTALLED_PY_VERSION}"
@@ -104,7 +104,7 @@ echo "============================================"
 detect_os
 
 # Check if Python 3.14 is already properly installed
-if check_python311; then
+if check_python314; then
     echo "Python 3.14 is already installed and working. Skipping installation."
 else
     # Install based on detected OS
