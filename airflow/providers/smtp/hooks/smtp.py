@@ -91,7 +91,7 @@ class SmtpHook(BaseHook):
                         raise AirflowException("Unable to connect to smtp server")
                 else:
                     if self.smtp_starttls:
-                        self.smtp_client.starttls()
+                        self.smtp_client.starttls(context=self._get_ssl_context())
                     if self.smtp_user and self.smtp_password:
                         self.smtp_client.login(self.smtp_user, self.smtp_password)
                     break
@@ -111,28 +111,37 @@ class SmtpHook(BaseHook):
         smtp_kwargs["timeout"] = self.timeout
 
         if self.use_ssl:
-            from airflow.configuration import conf
-
-            extra_ssl_context = self.conn.extra_dejson.get("ssl_context", None)
-            if extra_ssl_context:
-                ssl_context_string = extra_ssl_context
-            else:
-                ssl_context_string = conf.get("smtp_provider", "SSL_CONTEXT", fallback=None)
-            if ssl_context_string is None:
-                ssl_context_string = conf.get("email", "SSL_CONTEXT", fallback=None)
-            if ssl_context_string is None:
-                ssl_context_string = "default"
-            if ssl_context_string == "default":
-                ssl_context = ssl.create_default_context()
-            elif ssl_context_string == "none":
-                ssl_context = None
-            else:
-                raise RuntimeError(
-                    f"The email.ssl_context configuration variable must "
-                    f"be set to 'default' or 'none' and is '{ssl_context_string}'."
-                )
-            smtp_kwargs["context"] = ssl_context
+            smtp_kwargs["context"] = self._get_ssl_context()
         return SMTP(**smtp_kwargs)
+
+    def _get_ssl_context(self) -> ssl.SSLContext | None:
+        """
+        Resolve the SSL context for SMTP_SSL connections and STARTTLS upgrades.
+
+        Precedence: connection ``ssl_context`` extra -> ``smtp_provider.ssl_context`` config
+        -> ``email.ssl_context`` config -> ``"default"``. Returns ``None`` only when explicitly
+        set to ``"none"``, which disables certificate validation (not recommended; allows MITM).
+        """
+        from airflow.configuration import conf
+
+        extra_ssl_context = self.conn.extra_dejson.get("ssl_context", None)
+        if extra_ssl_context:
+            ssl_context_string = extra_ssl_context
+        else:
+            ssl_context_string = conf.get("smtp_provider", "SSL_CONTEXT", fallback=None)
+        if ssl_context_string is None:
+            ssl_context_string = conf.get("email", "SSL_CONTEXT", fallback=None)
+        if ssl_context_string is None:
+            ssl_context_string = "default"
+        if ssl_context_string == "default":
+            return ssl.create_default_context()
+        elif ssl_context_string == "none":
+            return None
+        else:
+            raise RuntimeError(
+                f"The email.ssl_context configuration variable must "
+                f"be set to 'default' or 'none' and is '{ssl_context_string}'."
+            )
 
     @classmethod
     def get_connection_form_widgets(cls) -> dict[str, Any]:
