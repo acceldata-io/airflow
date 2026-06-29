@@ -275,7 +275,7 @@ def send_mime_email(
                     raise
             else:
                 if smtp_starttls:
-                    smtp_conn.starttls()
+                    smtp_conn.starttls(context=_get_email_ssl_context())
                 if smtp_user and smtp_password:
                     smtp_conn.login(smtp_user, smtp_password)
                 log.info("Sent an alert email to %s", e_to)
@@ -315,17 +315,28 @@ def _get_smtp_connection(host: str, port: int, timeout: int, with_ssl: bool) -> 
     if not with_ssl:
         return smtplib.SMTP(host=host, port=port, timeout=timeout)
     else:
-        ssl_context_string = conf.get("email", "SSL_CONTEXT")
-        if ssl_context_string == "default":
-            ssl_context = ssl.create_default_context()
-        elif ssl_context_string == "none":
-            ssl_context = None
-        else:
-            raise RuntimeError(
-                f"The email.ssl_context configuration variable must "
-                f"be set to 'default' or 'none' and is '{ssl_context_string}."
-            )
-        return smtplib.SMTP_SSL(host=host, port=port, timeout=timeout, context=ssl_context)
+        return smtplib.SMTP_SSL(host=host, port=port, timeout=timeout, context=_get_email_ssl_context())
+
+
+def _get_email_ssl_context() -> ssl.SSLContext | None:
+    """
+    Build the SSL context for SMTP connections from the ``email.ssl_context`` config.
+
+    Used for both implicit-SSL (``SMTP_SSL``) connections and STARTTLS upgrades so that
+    certificate validation behaves identically for both. Returns ``None`` only when the
+    operator explicitly sets the context to ``"none"`` to disable certificate validation
+    (not recommended -- allows MITM attacks).
+    """
+    ssl_context_string = conf.get("email", "SSL_CONTEXT")
+    if ssl_context_string == "default":
+        return ssl.create_default_context()
+    elif ssl_context_string == "none":
+        return None
+    else:
+        raise RuntimeError(
+            f"The email.ssl_context configuration variable must "
+            f"be set to 'default' or 'none' and is '{ssl_context_string}."
+        )
 
 
 def _get_email_list_from_str(addresses: str) -> list[str]:
