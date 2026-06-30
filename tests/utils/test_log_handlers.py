@@ -268,7 +268,7 @@ class TestFileTaskLogHandler:
         path2 = tmp_path / "hello1.log.suffix.log"
         path1.write_text("file1 content")
         path2.write_text("file2 content")
-        fth = FileTaskHandler("")
+        fth = FileTaskHandler(str(tmp_path))
         assert fth._read_from_local(path1) == (
             [
                 "Found local files:",
@@ -277,6 +277,29 @@ class TestFileTaskLogHandler:
             ],
             ["file1 content", "file2 content"],
         )
+
+    def test__read_from_local_skips_paths_outside_base(self, tmp_path):
+        """CVE-2026-40861: a symlink escaping base_log_folder must not be read."""
+        base = tmp_path / "logs"
+        base.mkdir()
+        # A genuine log inside the base log folder is still returned.
+        inside = base / "hello1.log"
+        inside.write_text("file1 content")
+        # A secret outside the base, reachable only via a symlink planted in the base.
+        secret = tmp_path / "secret.txt"
+        secret.write_text("TOP SECRET")
+        evil_link = base / "hello1.log.evil.log"
+        evil_link.symlink_to(secret)
+
+        fth = FileTaskHandler(str(base))
+        messages, logs = fth._read_from_local(inside)
+
+        # The secret content is never read...
+        assert "TOP SECRET" not in logs
+        assert logs == ["file1 content"]
+        # ...and the escaping path is reported as skipped.
+        assert any("Skipped log file outside of base log folder" in m for m in messages)
+        assert any(str(evil_link) in m for m in messages)
 
     @mock.patch(
         "airflow.providers.cncf.kubernetes.executors.kubernetes_executor.KubernetesExecutor.get_task_log"
