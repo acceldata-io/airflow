@@ -240,21 +240,27 @@ class SecretsMasker(logging.Filter):
             return item
 
     def _redact(self, item: Redactable, name: str | None, depth: int, max_depth: int) -> Redacted:
-        # Avoid spending too much effort on redacting on deeply nested
-        # structures. This also avoid infinite recursion if a structure has
-        # reference to self.
-        if depth > max_depth:
-            return item
         try:
+            # Redaction driven by a sensitive key name is not bounded by ``max_depth``: a
+            # value under a sensitive key (e.g. ``password``, ``token``) must be masked no
+            # matter how deeply it is nested, otherwise secrets can bypass the masker simply
+            # by being nested past the depth limit.
             if name and should_hide_value_for_key(name):
                 return self._redact_all(item, depth, max_depth)
+            # Always walk dicts so that sensitive keys nested deeper than ``max_depth`` are
+            # still discovered and masked.
             if isinstance(item, dict):
                 to_return = {
                     dict_key: self._redact(subval, name=dict_key, depth=(depth + 1), max_depth=max_depth)
                     for dict_key, subval in item.items()
                 }
                 return to_return
-            elif isinstance(item, Enum):
+            # Avoid spending too much effort on pattern-based redaction of deeply nested
+            # non-dict structures. This also avoids excessive recursion if a structure has
+            # a reference to self.
+            if depth > max_depth:
+                return item
+            if isinstance(item, Enum):
                 return self._redact(item=item.value, name=name, depth=depth, max_depth=max_depth)
             elif _is_v1_env_var(item):
                 tmp: dict = item.to_dict()
