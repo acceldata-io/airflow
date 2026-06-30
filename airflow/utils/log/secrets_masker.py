@@ -58,7 +58,10 @@ DEFAULT_SENSITIVE_FIELDS = frozenset(
         "access_token",
         "api_key",
         "apikey",
+        "auth_header",
         "authorization",
+        "bearer",
+        "dsn",
         "passphrase",
         "passwd",
         "password",
@@ -69,6 +72,8 @@ DEFAULT_SENSITIVE_FIELDS = frozenset(
         "token",
         "keyfile_dict",
         "service_account",
+        "service_key",
+        "webhook_url",
     }
 )
 """Names of fields (Connection extra, Variable key name etc.) that are deemed sensitive"""
