@@ -305,6 +305,28 @@ class TestSecretsMasker:
             got = redact(val, max_depth=max_depth)
             assert got == expected
 
+    @pytest.mark.parametrize(
+        ("val", "expected"),
+        [
+            # Sensitive key nested deeper than MAX_RECURSION_DEPTH (5) must still be masked
+            # by key name -- otherwise secrets can bypass masking simply by being nested deep.
+            (
+                {"a": {"b": {"c": {"d": {"e": {"f": {"password": "hunter2"}}}}}}},
+                {"a": {"b": {"c": {"d": {"e": {"f": {"password": "***"}}}}}}},
+            ),
+            # Sensitive key reached through deeply nested dicts and a list.
+            (
+                {"a": {"b": {"c": {"d": {"e": [{"token": "abc"}]}}}}},
+                {"a": {"b": {"c": {"d": {"e": [{"token": "***"}]}}}}},
+            ),
+        ],
+    )
+    def test_redact_masks_sensitive_keys_beyond_max_depth(self, val, expected):
+        """Key-name based redaction must not be bounded by max_depth."""
+        secrets_masker = SecretsMasker()
+        with patch("airflow.utils.log.secrets_masker._secrets_masker", return_value=secrets_masker):
+            assert redact(val) == expected
+
     def test_redact_with_str_type(self, logger, caplog):
         """
         SecretsMasker's re2 replacer has issues handling a redactable item of type
