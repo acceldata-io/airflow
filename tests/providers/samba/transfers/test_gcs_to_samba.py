@@ -312,3 +312,43 @@ class TestGoogleCloudStorageToSambaOperator:
         )
         with pytest.raises(AirflowException):
             operator.execute(None)
+
+    @pytest.mark.parametrize(
+        "source_object",
+        [
+            "../escape.txt",
+            "../../victim_area/payload.txt",
+            "subdir/../../escape.txt",
+        ],
+    )
+    def test_resolve_destination_path_rejects_traversal(self, source_object):
+        """CVE-2026-49818: object names that escape destination_path must be rejected."""
+        operator = GCSToSambaOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_object=source_object,
+            destination_path=DESTINATION_SMB,
+            gcp_conn_id=GCP_CONN_ID,
+            samba_conn_id=SAMBA_CONN_ID,
+        )
+        with pytest.raises(ValueError, match="outside the configured"):
+            operator._resolve_destination_path(source_object)
+
+    @pytest.mark.parametrize(
+        "source_object, expected",
+        [
+            ("file.txt", os.path.join(DESTINATION_SMB, "file.txt")),
+            ("dir/file.txt", os.path.join(DESTINATION_SMB, "dir", "file.txt")),
+        ],
+    )
+    def test_resolve_destination_path_allows_contained_paths(self, source_object, expected):
+        """Legitimate nested object names inside destination_path are still allowed."""
+        operator = GCSToSambaOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_object=source_object,
+            destination_path=DESTINATION_SMB,
+            gcp_conn_id=GCP_CONN_ID,
+            samba_conn_id=SAMBA_CONN_ID,
+        )
+        assert operator._resolve_destination_path(source_object) == expected
