@@ -542,14 +542,32 @@ class FileTaskHandler(logging.Handler):
 
         return full_path
 
-    @staticmethod
-    def _read_from_local(worker_log_path: Path) -> tuple[list[str], list[str]]:
+    def _read_from_local(self, worker_log_path: Path) -> tuple[list[str], list[str]]:
         messages = []
         paths = sorted(worker_log_path.parent.glob(worker_log_path.name + "*"))
-        if paths:
+        # Resolve the configured base log folder once so each candidate file can be
+        # verified to actually reside within it. Without this guard a DAG author could
+        # plant a symlink under their task log directory (or craft a task_id containing
+        # "..") and make the webserver/API process follow it to arbitrary files such as
+        # /etc/passwd or airflow.cfg -- CVE-2026-40861.
+        canonical_base = os.path.realpath(self.local_base)
+        safe_paths = []
+        for path in paths:
+            resolved = os.path.realpath(path)
+            try:
+                is_contained = os.path.commonpath([canonical_base, resolved]) == canonical_base
+            except ValueError:
+                # Raised when paths live on different drives (Windows); treat as outside.
+                is_contained = False
+            if is_contained:
+                safe_paths.append(path)
+            else:
+                messages.append(f"Skipped log file outside of base log folder: {path}")
+        if safe_paths:
             messages.append("Found local files:")
-            messages.extend(f"  * {x}" for x in paths)
-        logs = [file.read_text() for file in paths]
+            messages.extend(f"  * {x}" for x in safe_paths)
+        # Read from the canonicalized path so the file that was validated is the one read.
+        logs = [Path(os.path.realpath(file)).read_text() for file in safe_paths]
         return messages, logs
 
     def _read_from_logs_server(self, ti, worker_log_rel_path) -> tuple[list[str], list[str]]:
