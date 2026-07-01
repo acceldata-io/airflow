@@ -242,3 +242,6 @@ licenses/LICENSES-ui.txt
 
 # airflow-build-dockerfile and correconding ignore file
 airflow-build-dockerfile*
+
+# ODP: locally-built patched provider wheels (CVE backports)
+odp/wheelhouse/
