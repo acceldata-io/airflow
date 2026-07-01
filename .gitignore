@@ -244,3 +244,6 @@ licenses/LICENSES-ui.txt
 airflow-build-dockerfile*
 
 .github/actions
+=======
+# ODP: locally-built patched provider wheels (CVE backports)
+odp/wheelhouse/

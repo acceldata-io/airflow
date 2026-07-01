@@ -258,6 +258,33 @@ echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
 pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
+=======
+# --- Patched providers built FROM LOCAL SOURCE (CVE backports) ---------------
+# The core `pip install "${AIRFLOW_SOURCE_ROOT}[...]"` above EXCLUDES
+# /airflow/providers/ from the wheel (see [tool.hatch.build.targets.wheel] in
+# pyproject.toml), so provider source patches never reach the core install --
+# providers arrive as separately-published apache-airflow-providers-* packages.
+#
+# Some provider CVEs also cannot be remediated by bumping the provider version:
+# upstream only shipped the fix in provider releases that require a newer Airflow
+# core than we ship (samba CVE-2026-49818 and the provider half of smtp
+# CVE-2026-49267 are only fixed in versions needing apache-airflow>=2.9/2.11,
+# but we are on 2.8.3). So we build the 2.8.3-compatible provider version line
+# from our patched monorepo source and install that over the index-pulled ones.
+echo ""
+echo "Building patched providers from source (CVE backports)..."
+python "${SCRIPT_DIR}/build_providers.py"
+
+# smtp: replace the index-pulled provider with our fixed wheel.
+# --force-reinstall so the version vs the index build is irrelevant; --no-deps
+# because apache-airflow is already installed above.
+pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_smtp-*.whl
+
+# samba: NOT part of the default shipped set (nothing installs it today). Install
+# only if ODP ships the Samba connector -- installed WITH deps so smbprotocol is
+# resolved. Comment out the next line if Samba is out of scope for the distribution.
+pip install "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_samba-*.whl --constraint "${CONSTRAINTS_FILE}"
+
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
 echo ""
