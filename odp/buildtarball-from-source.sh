@@ -26,6 +26,23 @@ ODP_AIRFLOW_VERSION_UNDERSCORE="${ODP_AIRFLOW_VERSION_UNDERSCORE//-/_}"
 REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements-source.txt"
 TARBALL_NAME="airflow_environment_${ODP_AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
 
+# Optional: bake the Samba connector into the tarball. Default OFF.
+# The samba wheel is ALWAYS built into wheelhouse/ (for separate delivery), but it
+# is only installed into the base tarball when explicitly requested -- either by
+# exporting INCLUDE_SAMBA=1 (accepts 1/true/yes) or passing --with-samba.
+# smtp is always refreshed (it's a pre-installed provider), so it is NOT gated.
+INCLUDE_SAMBA="${INCLUDE_SAMBA:-0}"
+for arg in "$@"; do
+    case "${arg}" in
+        --with-samba) INCLUDE_SAMBA=1 ;;
+        --no-samba)   INCLUDE_SAMBA=0 ;;
+    esac
+done
+case "${INCLUDE_SAMBA}" in
+    1|true|TRUE|yes|YES|on|ON) INCLUDE_SAMBA=1 ;;
+    *)                         INCLUDE_SAMBA=0 ;;
+esac
+
 echo "============================================"
 echo "Airflow Tarball Builder (FROM SOURCE)"
 echo "============================================"
@@ -34,6 +51,11 @@ echo "Airflow Version (from source): ${AIRFLOW_VERSION}"
 echo "ODP Version: ${ODP_VERSION}"
 echo "Combined Version: ${ODP_AIRFLOW_VERSION}"
 echo "Tarball: ${TARBALL_NAME}"
+if [ "${INCLUDE_SAMBA}" = "1" ]; then
+    echo "Samba connector: INCLUDED (baked into tarball)"
+else
+    echo "Samba connector: EXCLUDED (wheel emitted to wheelhouse/ for separate delivery)"
+fi
 echo "============================================"
 
 # Verify source directory contains pyproject.toml
@@ -280,14 +302,24 @@ python "${SCRIPT_DIR}/build_providers.py"
 # because apache-airflow is already installed above.
 pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_smtp-*.whl
 
-# samba: NOT part of the default shipped set (nothing installs it today). Install
-# only if ODP ships the Samba connector; otherwise comment out both lines below.
+# samba: OPTIONAL and EXCLUDED by default (nothing in the default shipped set
+# installs it). Baked in only when INCLUDE_SAMBA=1 (or --with-samba); otherwise the
+# wheel is left in wheelhouse/ for separate delivery to customers who need it.
 # The constraints file pins apache-airflow-providers-samba to an upstream version,
 # which would reject our 2.8.3 backport -- so install its runtime dep UNDER the
 # constraints, then force-install our wheel WITHOUT the constraint (--no-deps
 # because smbprotocol is handled on the preceding line).
-pip install "smbprotocol>=1.5.0" --constraint "${CONSTRAINTS_FILE}"
-pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_samba-*.whl
+if [ "${INCLUDE_SAMBA}" = "1" ]; then
+    echo "INCLUDE_SAMBA=1 -> baking Samba connector into the tarball"
+    pip install "smbprotocol>=1.5.0" --constraint "${CONSTRAINTS_FILE}"
+    pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_samba-*.whl
+else
+    echo "Samba connector NOT baked into tarball (default)."
+    echo "  -> patched wheel available for separate delivery at:"
+    echo "     ${SCRIPT_DIR}/wheelhouse/apache_airflow_providers_samba-*.whl"
+    echo "  -> to bake it in, re-run with:  INCLUDE_SAMBA=1 bash odp/buildtarball-from-source.sh"
+    echo "     (or:  bash odp/buildtarball-from-source.sh --with-samba )"
+fi
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
