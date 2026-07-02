@@ -281,9 +281,13 @@ python "${SCRIPT_DIR}/build_providers.py"
 pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_smtp-*.whl
 
 # samba: NOT part of the default shipped set (nothing installs it today). Install
-# only if ODP ships the Samba connector -- installed WITH deps so smbprotocol is
-# resolved. Comment out the next line if Samba is out of scope for the distribution.
-pip install "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_samba-*.whl --constraint "${CONSTRAINTS_FILE}"
+# only if ODP ships the Samba connector; otherwise comment out both lines below.
+# The constraints file pins apache-airflow-providers-samba to an upstream version,
+# which would reject our 2.8.3 backport -- so install its runtime dep UNDER the
+# constraints, then force-install our wheel WITHOUT the constraint (--no-deps
+# because smbprotocol is handled on the preceding line).
+pip install "smbprotocol>=1.5.0" --constraint "${CONSTRAINTS_FILE}"
+pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_samba-*.whl
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
