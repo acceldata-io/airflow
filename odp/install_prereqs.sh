@@ -37,7 +37,7 @@ detect_os() {
 
 # CentOS 7 ships glibc 2.17; use Node unofficial glibc-217 builds (standard Node 18+ binaries need newer glibc).
 install_nodejs18_centos7() {
-    local NODE_VERSION="${NODE_VERSION:-18.20.5}"
+    local NODE_VERSION="18.20.5"
     local INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local}"
     local name="node-v${NODE_VERSION}-linux-x64-glibc-217"
     local url="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/${name}.tar.xz"
