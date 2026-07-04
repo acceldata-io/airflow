@@ -280,7 +280,6 @@ echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
 pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
-=======
 # --- Patched providers built FROM LOCAL SOURCE (CVE backports) ---------------
 # The core `pip install "${AIRFLOW_SOURCE_ROOT}[...]"` above EXCLUDES
 # /airflow/providers/ from the wheel (see [tool.hatch.build.targets.wheel] in
