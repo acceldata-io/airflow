@@ -148,6 +148,16 @@ sed -i 's/^virtualenv==.*/virtualenv==20.26.6/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^Authlib==.*/Authlib==1.3.2/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^snowflake-connector-python==.*/snowflake-connector-python==3.13.1/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^redshift-connector==.*/redshift-connector==2.1.7/' "${LOCAL_CONSTRAINTS}"
+# cryptography 43 compat: google stack pinned era-2024 caps cryptography<42 via gcloud-aio-auth
+# (google-auth is handled by requirements.txt, its constraint line is deleted above)
+sed -i 's/^gcloud-aio-auth==.*/gcloud-aio-auth==5.3.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^apache-airflow-providers-google==.*/apache-airflow-providers-google==10.23.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^google-ads==.*/google-ads==25.2.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^google-cloud-aiplatform==.*/google-cloud-aiplatform==1.63.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^google-cloud-dataproc==.*/google-cloud-dataproc==5.15.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^httpx==.*/httpx==0.27.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^httpcore==.*/httpcore==1.0.9/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^h11==.*/h11==0.16.0/' "${LOCAL_CONSTRAINTS}"
 
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
