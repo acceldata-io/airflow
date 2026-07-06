@@ -144,6 +144,7 @@ sed -i 's/^protobuf==.*/protobuf==4.25.8/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^certifi==.*/certifi==2024.7.4/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^Mako==.*/Mako==1.3.12/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^sqlparse==.*/sqlparse==0.5.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^virtualenv==.*/virtualenv==20.26.6/' "${LOCAL_CONSTRAINTS}"
 
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
