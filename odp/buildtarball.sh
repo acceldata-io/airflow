@@ -115,6 +115,9 @@ sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 # Remove google-re2 constraint to allow fresh build with re2-devel
 sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 
+# CVE pin bumps - keep in sync with constraints-3.8.txt
+sed -i 's/^gunicorn==.*/gunicorn==23.0.0/' "${LOCAL_CONSTRAINTS}"
+
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"

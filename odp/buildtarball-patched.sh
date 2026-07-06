@@ -128,6 +128,9 @@ sed -i '/^websocket-client/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 
+# CVE pin bumps - keep in sync with constraints-3.8.txt
+sed -i 's/^gunicorn==.*/gunicorn==23.0.0/' "${LOCAL_CONSTRAINTS}"
+
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
 
