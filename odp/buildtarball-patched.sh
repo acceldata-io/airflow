@@ -147,6 +147,7 @@ sed -i 's/^sqlparse==.*/sqlparse==0.5.0/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^virtualenv==.*/virtualenv==20.26.6/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^Authlib==.*/Authlib==1.3.2/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^snowflake-connector-python==.*/snowflake-connector-python==3.13.1/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^redshift-connector==.*/redshift-connector==2.1.7/' "${LOCAL_CONSTRAINTS}"
 
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"

@@ -582,7 +582,7 @@ pyzmq==25.1.2
 reactivex==4.0.4
 readme-renderer==42.0
 redis==4.6.0
-redshift-connector==2.0.918
+redshift-connector==2.1.7
 referencing==0.32.1
 regex==2023.12.25
 requests-file==1.5.1
