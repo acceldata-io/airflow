@@ -119,6 +119,10 @@ sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^gunicorn==.*/gunicorn==23.0.0/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^Jinja2==.*/Jinja2==3.1.6/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^GitPython==.*/GitPython==3.1.50/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^aiohttp==.*/aiohttp==3.10.11/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^yarl==.*/yarl==1.15.2/' "${LOCAL_CONSTRAINTS}"
+echo "aiohappyeyeballs==2.4.4" >> "${LOCAL_CONSTRAINTS}"
+echo "propcache==0.2.0" >> "${LOCAL_CONSTRAINTS}"
 
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
