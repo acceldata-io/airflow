@@ -261,7 +261,7 @@ coverage==7.4.0
 crcmod==1.7
 cron-descriptor==1.4.0
 croniter==2.0.1
-cryptography==41.0.7
+cryptography==43.0.3
 curlify==2.2.1
 databricks-sql-connector==2.9.3
 datadog==0.47.0
@@ -528,7 +528,7 @@ pure-eval==0.2.2
 pure-sasl==0.6.2
 py-partiql-parser==0.5.0
 py4j==0.10.9.7
-pyOpenSSL==23.3.0
+pyOpenSSL==24.2.1
 pyarrow-hotfix==0.6
 pyarrow==14.0.2
 pyasn1-modules==0.3.0

@@ -136,6 +136,8 @@ sed -i 's/^aiohttp==.*/aiohttp==3.10.11/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^yarl==.*/yarl==1.15.2/' "${LOCAL_CONSTRAINTS}"
 echo "aiohappyeyeballs==2.4.4" >> "${LOCAL_CONSTRAINTS}"
 echo "propcache==0.2.0" >> "${LOCAL_CONSTRAINTS}"
+sed -i 's/^cryptography==.*/cryptography==43.0.3/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^pyOpenSSL==.*/pyOpenSSL==24.2.1/' "${LOCAL_CONSTRAINTS}"
 
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
