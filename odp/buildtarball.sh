@@ -125,6 +125,8 @@ echo "aiohappyeyeballs==2.4.4" >> "${LOCAL_CONSTRAINTS}"
 echo "propcache==0.2.0" >> "${LOCAL_CONSTRAINTS}"
 sed -i 's/^cryptography==.*/cryptography==43.0.3/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^pyOpenSSL==.*/pyOpenSSL==24.2.1/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^eventlet==.*/eventlet==0.38.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^dnspython==.*/dnspython==2.6.1/' "${LOCAL_CONSTRAINTS}"
 
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
