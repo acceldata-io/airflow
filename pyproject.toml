@@ -93,7 +93,7 @@ dependencies = [
     "cryptography>=0.9.3",
     "deprecated>=1.2.13",
     "dill>=0.2.2",
-    "flask-appbuilder==4.3.10",
+    "flask-appbuilder==4.3.11",
     "flask-caching>=1.5.0",
     "flask-login>=0.6.2",
     "flask-session>=0.4.0",
