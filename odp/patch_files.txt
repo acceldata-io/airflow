@@ -11,3 +11,4 @@
 #   airflow/providers/amazon/aws/hooks/base_aws.py
 
 airflow/utils/log/secrets_masker.py
+airflow/example_dags/example_xcom.py
