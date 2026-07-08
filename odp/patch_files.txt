@@ -15,3 +15,7 @@ airflow/example_dags/example_xcom.py
 airflow/models/dag.py
 airflow/settings.py
 airflow/configuration.py
+airflow/auth/managers/base_auth_manager.py
+airflow/auth/managers/utils/fab.py
+airflow/auth/managers/fab/fab_auth_manager.py
+airflow/www/security_manager.py
