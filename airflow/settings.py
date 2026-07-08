@@ -555,6 +555,9 @@ def initialize():
     configure_orm()
     configure_action_logging()
 
+    # mask the sensitive_config_values
+    conf.mask_secrets()
+
     # Ensure we close DB connections at scheduler and gunicorn worker terminations
     atexit.register(dispose_orm)
 
