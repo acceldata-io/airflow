@@ -12,3 +12,4 @@
 
 airflow/utils/log/secrets_masker.py
 airflow/example_dags/example_xcom.py
+airflow/models/dag.py
