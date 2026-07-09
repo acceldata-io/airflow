@@ -213,7 +213,7 @@ pip install --upgrade pip setuptools wheel Cython
 # Install build dependencies required by hatchling and C extensions (gssapi, krb5)
 echo "Installing build dependencies for Airflow..."
 pip install \
-    "GitPython==3.1.42" \
+    "GitPython==3.1.50" \
     "hatchling==1.21.1" \
     "editables==0.5" \
     "gitdb==4.0.11" \
