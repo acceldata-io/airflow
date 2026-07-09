@@ -12,7 +12,7 @@ Cython
 # Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
 PyMySQL==1.1.1
 
-# Pin versions to match existing airflow tarball environment at https://mirror.odp.acceldata.dev/ODP/PY-UTILS/centos7/ 
+# Pin versions to match existing airflow tarball environment at https://mirror-stg.odp.acceldata.dev/ODP/PY-UTILS/centos7/ 
 aiofiles==24.1.0
 cachetools==5.5.2
 distlib==0.3.9
