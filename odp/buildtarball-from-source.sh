@@ -301,6 +301,13 @@ python "${SCRIPT_DIR}/build_providers.py"
 # because apache-airflow is already installed above.
 pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_smtp-*.whl
 
+# ftp: replace the index-pulled 3.7.0 provider (constraints-pinned, unpatched)
+# with our fixed wheel. CVE-2026-49486 -- FTPSHook.get_conn() now issues PROT P
+# so the FTPS data channel is TLS-encrypted, not just the control channel.
+# The upstream fix only shipped in providers-ftp>=3.15.1, so we backport the
+# one-line fix onto the 2.8.3-compatible 3.7.0 line as 3.7.0+odp1.
+pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_ftp-*.whl
+
 # samba: OPTIONAL and EXCLUDED by default (nothing in the default shipped set
 # installs it). Baked in only when INCLUDE_SAMBA=1 (or --with-samba); otherwise the
 # wheel is left in wheelhouse/ for separate delivery to customers who need it.

@@ -77,6 +77,31 @@ PROVIDERS = {
                                   "connection-type": "samba"}],
         },
     },
+    "ftp": {
+        "dist": "apache-airflow-providers-ftp",
+        "version": "3.7.0+odp1",           # CVE-2026-49486 (FTPSHook data channel not encrypted / missing PROT P)
+        "requires": ["apache-airflow>=2.6.0"],
+        "info": {
+            "package-name": "apache-airflow-providers-ftp",
+            "name": "File Transfer Protocol (FTP)",
+            "description": "`File Transfer Protocol (FTP) <https://tools.ietf.org/html/rfc114>`__\n",
+            "state": "ready",
+            "source-date-epoch": 1703288135,
+            "versions": ["3.7.0", "3.6.1", "3.6.0", "3.5.2", "3.5.1", "3.5.0", "3.4.2", "3.4.1", "3.4.0", "3.3.1", "3.3.0", "3.2.0", "3.1.0", "3.0.0", "2.1.2", "2.1.1", "2.1.0", "2.0.1", "2.0.0", "1.1.0", "1.0.1", "1.0.0"],
+            "dependencies": ["apache-airflow>=2.6.0"],
+            "integrations": [{"integration-name": "File Transfer Protocol (FTP)",
+                              "external-doc-url": "https://tools.ietf.org/html/rfc114",
+                              "logo": "/integration-logos/ftp/FTP.png", "tags": ["protocol"]}],
+            "operators": [{"integration-name": "File Transfer Protocol (FTP)",
+                           "python-modules": ["airflow.providers.ftp.operators.ftp"]}],
+            "sensors": [{"integration-name": "File Transfer Protocol (FTP)",
+                         "python-modules": ["airflow.providers.ftp.sensors.ftp"]}],
+            "hooks": [{"integration-name": "File Transfer Protocol (FTP)",
+                       "python-modules": ["airflow.providers.ftp.hooks.ftp"]}],
+            "connection-types": [{"hook-class-name": "airflow.providers.ftp.hooks.ftp.FTPHook",
+                                  "connection-type": "ftp"}],
+        },
+    },
 }
 
 
