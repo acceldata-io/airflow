@@ -134,7 +134,7 @@ sed -i 's/^sqlparse==.*/sqlparse==0.5.0/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^virtualenv==.*/virtualenv==20.26.6/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^Authlib==.*/Authlib==1.3.2/' "${LOCAL_CONSTRAINTS}"
 sed -i 's/^snowflake-connector-python==.*/snowflake-connector-python==3.13.1/' "${LOCAL_CONSTRAINTS}"
-sed -i 's/^redshift-connector==.*/redshift-connector==2.1.7/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^redshift-connector==.*/redshift-connector==2.1.14/' "${LOCAL_CONSTRAINTS}"
 # cryptography 43 compat: google stack pinned era-2024 caps cryptography<42 via gcloud-aio-auth
 # (google-auth is handled by requirements.txt, its constraint line is deleted above)
 sed -i 's/^gcloud-aio-auth==.*/gcloud-aio-auth==5.3.2/' "${LOCAL_CONSTRAINTS}"
