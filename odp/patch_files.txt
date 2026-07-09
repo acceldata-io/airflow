@@ -19,3 +19,4 @@ airflow/auth/managers/base_auth_manager.py
 airflow/auth/managers/utils/fab.py
 airflow/auth/managers/fab/fab_auth_manager.py
 airflow/www/security_manager.py
+airflow/providers/snowflake/transfers/copy_into_snowflake.py
