@@ -183,3 +183,11 @@ class TestIntegrationFTPHook:
         from airflow.providers.ftp.hooks.ftp import FTPSHook
 
         self._test_mode(FTPSHook, "ftp_active", False)
+
+    @mock.patch("ftplib.FTP_TLS")
+    def test_ftps_enables_protected_data_channel(self, mock_ftp_tls):
+        from airflow.providers.ftp.hooks.ftp import FTPSHook
+
+        hook = FTPSHook("ftp_passive")
+        conn = hook.get_conn()
+        conn.prot_p.assert_called_once_with()

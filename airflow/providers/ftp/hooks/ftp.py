@@ -279,5 +279,6 @@ class FTPSHook(FTPHook):
 
             self.conn = ftplib.FTP_TLS(params.host, params.login, params.password)  # nosec: B321
             self.conn.set_pasv(pasv)
+            self.conn.prot_p()
 
         return self.conn
