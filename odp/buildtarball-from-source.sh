@@ -213,7 +213,7 @@ pip install --upgrade pip setuptools wheel Cython
 # Install build dependencies required by hatchling and C extensions (gssapi, krb5)
 echo "Installing build dependencies for Airflow..."
 pip install \
-    "GitPython==3.1.42" \
+    "GitPython==3.1.50" \
     "hatchling==1.21.1" \
     "editables==0.5" \
     "gitdb==4.0.11" \
@@ -308,8 +308,22 @@ fi
 # Verify frontend assets were included in the installed package
 echo ""
 echo "Verifying frontend assets in installed package..."
-INSTALLED_AIRFLOW_WWW=$(${PY} -c "import airflow.www; import os; print(os.path.dirname(airflow.www.__file__))")
+# Importing airflow.www boots Airflow's config system, which prints WARNING log
+# lines to stdout. Capture only the final line (the path prints last, after any
+# import-time warnings) and drop stderr, so the variable is a clean path and not
+# polluted with log noise.
+INSTALLED_AIRFLOW_WWW=$(${PY} -c "import airflow.www; import os; print(os.path.dirname(airflow.www.__file__))" 2>/dev/null | tail -n1)
 INSTALLED_DIST_DIR="${INSTALLED_AIRFLOW_WWW}/static/dist"
+
+# Overlay the Step-3-compiled web UI into the installed package.
+# The hatchling wheel build drops airflow/www/static/dist because the ".gitignore"
+# pattern "dist/" matches it at any depth, and the pyproject "artifacts" re-include
+# does not take effect when building from the extracted (non-git) source tarball.
+# Step 3 already compiled these assets into ${DIST_DIR}, so copy them in directly.
+if [ ! -d "${INSTALLED_DIST_DIR}" ] && [ -d "${DIST_DIR}" ]; then
+    echo "Frontend assets missing from installed package; overlaying from ${DIST_DIR}..."
+    cp -r "${DIST_DIR}" "${INSTALLED_DIST_DIR}"
+fi
 
 if [ ! -d "${INSTALLED_DIST_DIR}" ]; then
     echo "ERROR: Frontend assets NOT found in installed package at ${INSTALLED_DIST_DIR}"

@@ -17,8 +17,6 @@
 # under the License.
 from __future__ import annotations
 
-import base64
-import pickle
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
@@ -28,7 +26,7 @@ from airflow.configuration import conf
 from airflow.exceptions import AirflowException, AirflowProviderDeprecationWarning
 from airflow.hooks.base import BaseHook
 from airflow.models import BaseOperator
-from airflow.providers.http.triggers.http import HttpTrigger
+from airflow.providers.http.triggers.http import HttpResponseSerializer, HttpTrigger
 from airflow.utils.helpers import merge_dicts
 
 if TYPE_CHECKING:
@@ -238,7 +236,7 @@ class HttpOperator(BaseOperator):
         Relies on trigger to throw an exception, otherwise it assumes execution was successful.
         """
         if event["status"] == "success":
-            response = pickle.loads(base64.standard_b64decode(event["response"]))
+            response = HttpResponseSerializer.deserialize(event["response"])
 
             self.paginate_async(context=context, response=response, previous_responses=paginated_responses)
             return self.process_response(context=context, response=response)
