@@ -11,3 +11,14 @@
 #   airflow/providers/amazon/aws/hooks/base_aws.py
 
 airflow/utils/log/secrets_masker.py
+airflow/example_dags/example_xcom.py
+airflow/models/dag.py
+airflow/settings.py
+airflow/configuration.py
+airflow/auth/managers/base_auth_manager.py
+airflow/auth/managers/utils/fab.py
+airflow/auth/managers/fab/fab_auth_manager.py
+airflow/www/security_manager.py
+airflow/providers/snowflake/transfers/copy_into_snowflake.py
+airflow/providers/http/operators/http.py
+airflow/providers/http/triggers/http.py

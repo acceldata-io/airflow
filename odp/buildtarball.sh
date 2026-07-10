@@ -115,6 +115,37 @@ sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 # Remove google-re2 constraint to allow fresh build with re2-devel
 sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 
+# CVE pin bumps - keep in sync with constraints-3.8.txt
+sed -i 's/^gunicorn==.*/gunicorn==23.0.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^Jinja2==.*/Jinja2==3.1.6/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^GitPython==.*/GitPython==3.1.50/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^aiohttp==.*/aiohttp==3.10.11/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^yarl==.*/yarl==1.15.2/' "${LOCAL_CONSTRAINTS}"
+echo "aiohappyeyeballs==2.4.4" >> "${LOCAL_CONSTRAINTS}"
+echo "propcache==0.2.0" >> "${LOCAL_CONSTRAINTS}"
+sed -i 's/^cryptography==.*/cryptography==43.0.3/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^pyOpenSSL==.*/pyOpenSSL==24.2.1/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^eventlet==.*/eventlet==0.38.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^dnspython==.*/dnspython==2.6.1/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^protobuf==.*/protobuf==4.25.8/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^certifi==.*/certifi==2024.7.4/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^Mako==.*/Mako==1.3.12/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^sqlparse==.*/sqlparse==0.5.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^virtualenv==.*/virtualenv==20.26.6/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^Authlib==.*/Authlib==1.3.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^snowflake-connector-python==.*/snowflake-connector-python==3.13.1/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^redshift-connector==.*/redshift-connector==2.1.14/' "${LOCAL_CONSTRAINTS}"
+# cryptography 43 compat: google stack pinned era-2024 caps cryptography<42 via gcloud-aio-auth
+# (google-auth is handled by requirements.txt, its constraint line is deleted above)
+sed -i 's/^gcloud-aio-auth==.*/gcloud-aio-auth==5.3.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^apache-airflow-providers-google==.*/apache-airflow-providers-google==10.23.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^google-ads==.*/google-ads==25.2.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^google-cloud-aiplatform==.*/google-cloud-aiplatform==1.63.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^google-cloud-dataproc==.*/google-cloud-dataproc==5.15.0/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^httpx==.*/httpx==0.27.2/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^httpcore==.*/httpcore==1.0.9/' "${LOCAL_CONSTRAINTS}"
+sed -i 's/^h11==.*/h11==0.16.0/' "${LOCAL_CONSTRAINTS}"
+
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
 export CXXFLAGS="-std=gnu99"
