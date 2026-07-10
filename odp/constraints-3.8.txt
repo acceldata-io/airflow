@@ -550,7 +550,7 @@ pymssql==2.2.11
 pyodbc==5.0.1
 pyparsing==3.1.1
 pypsrp==0.8.1
-pyspark==3.5.0
+pyspark==3.5.5.3.2.3.7.post2
 pyspnego==0.10.2
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0

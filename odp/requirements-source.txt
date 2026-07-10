@@ -2,6 +2,7 @@
 # Versions are controlled by constraints-3.8.txt (passed via --constraint flag)
 # Only pin versions here for packages NOT in the constraints file
 
+--find-links https://mirror-stg.odp.acceldata.dev/staging/sehaj/spark3_odp_provider/
 PyMySQL==1.1.1
 
 apache-airflow-providers-celery
