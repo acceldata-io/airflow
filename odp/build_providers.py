@@ -102,6 +102,16 @@ PROVIDERS = {
                                   "connection-type": "ftp"}],
         },
     },
+    "google": {
+        "dist": "apache-airflow-providers-google",
+        "version": "10.13.1+odp1",         # CVE-2026-49297 (GCS object-name path traversal), built from vendored 10.13.1 source
+        # Force-reinstalled with --no-deps, so this Requires-Dist is not enforced at install
+        # time; the real google-cloud-* deps are resolved from requirements-source.txt.
+        "requires": ["apache-airflow>=2.6.0"],
+        # google's provider.yaml is ~1250 lines / 180+ modules -- parse it instead of
+        # hand-coding `info` (see _info_from_yaml).
+        "info_from_yaml": True,
+    },
 }
 
 
@@ -114,8 +124,29 @@ def _gen_get_provider_info(info: dict) -> bytes:
     return ("def get_provider_info():\n    return " + repr(info) + "\n").encode()
 
 
+def _info_from_yaml(name: str) -> dict:
+    """Load provider info by parsing the vendored provider.yaml.
+
+    Hand-transcribing the ``info`` dict (as the small providers above do) is
+    impractical for large providers like google (~1250 lines / 180+ modules),
+    so we parse the real provider.yaml. ``get_provider_info()`` is validated
+    against provider_info.schema.json, which only requires name/description and
+    allows additional properties, so the parsed doc passes as-is (ProvidersManager
+    reads connection-types / extra-links / secrets-backends / logging / etc.).
+    """
+    import yaml  # available in the build venv -- apache-airflow depends on PyYAML
+
+    yml = os.path.join(REPO_ROOT, "airflow", "providers", name, "provider.yaml")
+    with open(yml) as fh:
+        info = yaml.safe_load(fh)
+    if not (info.get("name") and info.get("description")):
+        raise SystemExit(f"{yml}: missing required name/description")
+    return info
+
+
 def build(name: str, spec: dict) -> str:
-    dist, version, requires, info = spec["dist"], spec["version"], spec["requires"], spec["info"]
+    dist, version, requires = spec["dist"], spec["version"], spec["requires"]
+    info = _info_from_yaml(name) if spec.get("info_from_yaml") else spec["info"]
     dist_us = dist.replace("-", "_")
     src_root = os.path.join(REPO_ROOT, "airflow", "providers", name)
     if not os.path.isdir(src_root):

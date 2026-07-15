@@ -308,6 +308,14 @@ pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflo
 # one-line fix onto the 2.8.3-compatible 3.7.0 line as 3.7.0+odp1.
 pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_ftp-*.whl
 
+# google: replace the index-pulled 10.16.0 provider (constraints-pinned, unpatched) with our
+# 10.13.1+odp1 wheel built from the patched monorepo source. CVE-2026-49297 -- GCSToSFTPOperator
+# and GCSTimeSpanFileTransformOperator now reject GCS object names whose resolved path escapes
+# the destination (path traversal). The upstream fix only shipped in providers-google>=22.2.1
+# (requires a newer core), so we backport onto the 2.8.3-compatible 10.13.1 line. --no-deps
+# leaves the already-installed google-cloud-* dependencies untouched.
+pip install --force-reinstall --no-deps "${SCRIPT_DIR}"/wheelhouse/apache_airflow_providers_google-*.whl
+
 # samba: OPTIONAL and EXCLUDED by default (nothing in the default shipped set
 # installs it). Baked in only when INCLUDE_SAMBA=1 (or --with-samba); otherwise the
 # wheel is left in wheelhouse/ for separate delivery to customers who need it.
