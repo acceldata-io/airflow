@@ -21,6 +21,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from airflow.providers.google.cloud.operators.gcs import (
     GCSBucketCreateAclEntryOperator,
     GCSCreateBucketOperator,
@@ -407,6 +409,36 @@ class TestGCSTimeSpanFileTransformOperator:
                 ),
             ]
         )
+
+    @mock.patch("airflow.providers.google.cloud.operators.gcs.subprocess")
+    @mock.patch("airflow.providers.google.cloud.operators.gcs.GCSHook")
+    def test_execute_rejects_path_traversal_in_blob_name(self, mock_hook, mock_subprocess):
+        # CVE-2026-49297: a blob name containing ".." segments must not escape the temp
+        # input directory; the download must be refused before it is attempted.
+        timespan_start = datetime(2015, 2, 1, 15, 16, 17, 345, tzinfo=timezone.utc)
+        mock_dag = mock.Mock()
+        mock_dag.following_schedule = lambda x: x + timedelta(hours=1)
+        context = dict(execution_date=timespan_start, dag=mock_dag, ti=mock.Mock())
+
+        mock_hook.return_value.list_by_timespan.return_value = ["../escape.py"]
+
+        op = GCSTimeSpanFileTransformOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_prefix="source_prefix",
+            source_gcp_conn_id="",
+            destination_bucket=TEST_BUCKET + "_dest",
+            destination_prefix="destination_prefix",
+            destination_gcp_conn_id="",
+            transform_script="script.py",
+        )
+
+        with pytest.raises(ValueError, match="escapes the temp directory"):
+            op.execute(context=context)
+
+        # Deviation from upstream: this provider version downloads via GCSHook.download(),
+        # not blob.download_to_filename(); assert the download is never attempted.
+        mock_hook.return_value.download.assert_not_called()
 
 
 class TestGCSDeleteBucketOperator:
