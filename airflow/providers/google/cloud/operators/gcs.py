@@ -783,10 +783,22 @@ class GCSTimeSpanFileTransformOperator(GoogleCloudBaseOperator):
         with TemporaryDirectory() as temp_input_dir, TemporaryDirectory() as temp_output_dir:
             temp_input_dir_path = Path(temp_input_dir)
             temp_output_dir_path = Path(temp_output_dir)
+            temp_input_dir_resolved = temp_input_dir_path.resolve()
 
             # TODO: download in parallel.
             for blob_to_transform in blobs_to_transform:
                 destination_file = temp_input_dir_path / blob_to_transform
+                # CVE-2026-49297: blob names come from the bucket listing and may contain
+                # ".." segments; ensure the resolved path stays within the temp input dir
+                # before creating parents / downloading.
+                # Compatibility with Python 3.8, ``Path.is_relative_to`` was added in Python 3.9.
+                try:
+                    destination_file.resolve().relative_to(temp_input_dir_resolved)
+                except ValueError:
+                    raise ValueError(
+                        f"Refusing to download GCS blob {blob_to_transform!r}: resolved path "
+                        f"{destination_file} escapes the temp directory {temp_input_dir_path}."
+                    ) from None
                 destination_file.parent.mkdir(parents=True, exist_ok=True)
                 try:
                     source_hook.download(
