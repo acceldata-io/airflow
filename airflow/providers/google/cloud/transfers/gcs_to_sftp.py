@@ -167,7 +167,23 @@ class GCSToSFTPOperator(BaseOperator):
                 source_object = os.path.relpath(source_object, start=prefix)
             else:
                 source_object = os.path.basename(source_object)
-        return os.path.join(self.destination_path, source_object)
+        # CVE-2026-49297: source_object comes from the GCS bucket listing and may contain
+        # ".." segments (or an absolute path). Normalize the joined path and refuse any name
+        # that escapes the configured destination_path (a remote SFTP path, so string-based).
+        resolved = os.path.normpath(os.path.join(self.destination_path, source_object))
+        base = os.path.normpath(self.destination_path)
+        escapes = (
+            resolved == ".."
+            or resolved.startswith(".." + os.sep)
+            or (os.path.isabs(resolved) and not os.path.isabs(base))
+            or (base != "." and resolved != base and not resolved.startswith(base.rstrip(os.sep) + os.sep))
+        )
+        if escapes:
+            raise ValueError(
+                f"Refusing to copy GCS object {source_object!r}: resolved destination "
+                f"{resolved!r} escapes configured destination_path {self.destination_path!r}."
+            )
+        return resolved
 
     def _copy_single_object(
         self,

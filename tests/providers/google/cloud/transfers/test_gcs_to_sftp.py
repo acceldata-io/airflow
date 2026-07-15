@@ -321,3 +321,84 @@ class TestGoogleCloudStorageToSFTPOperator:
         )
         with pytest.raises(AirflowException):
             operator.execute(None)
+
+    @pytest.mark.parametrize(
+        "source_object",
+        [
+            pytest.param("incoming/../../../../etc/passwd", id="dotdot-segments"),
+            pytest.param("/etc/passwd", id="absolute-path"),
+        ],
+    )
+    def test_resolve_destination_path_rejects_escape(self, source_object):
+        task = GCSToSFTPOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_object="incoming/*",
+            destination_path="/srv/sftp/incoming",
+            keep_directory_structure=True,
+            gcp_conn_id=GCP_CONN_ID,
+            sftp_conn_id=SFTP_CONN_ID,
+        )
+        with pytest.raises(ValueError, match="escapes configured destination_path"):
+            task._resolve_destination_path(source_object)
+
+    def test_resolve_destination_path_allows_benign_nested(self):
+        task = GCSToSFTPOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_object="incoming/*",
+            destination_path="/srv/sftp/incoming",
+            keep_directory_structure=True,
+            gcp_conn_id=GCP_CONN_ID,
+            sftp_conn_id=SFTP_CONN_ID,
+        )
+        assert (
+            task._resolve_destination_path("incoming/sub/dir/file.csv")
+            == "/srv/sftp/incoming/incoming/sub/dir/file.csv"
+        )
+
+    @pytest.mark.parametrize(
+        ("destination_path", "source_object", "expected"),
+        [
+            pytest.param(".", "file.txt", "file.txt", id="dot-base-benign"),
+            pytest.param("", "file.txt", "file.txt", id="empty-base-benign"),
+            pytest.param(".", "sub/dir/file.txt", "sub/dir/file.txt", id="dot-base-nested"),
+        ],
+    )
+    def test_resolve_destination_path_allows_relative_base(
+        self, destination_path, source_object, expected
+    ):
+        task = GCSToSFTPOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_object="*",
+            destination_path=destination_path,
+            keep_directory_structure=True,
+            gcp_conn_id=GCP_CONN_ID,
+            sftp_conn_id=SFTP_CONN_ID,
+        )
+        assert task._resolve_destination_path(source_object) == expected
+
+    @pytest.mark.parametrize(
+        ("destination_path", "source_object"),
+        [
+            pytest.param(".", "../etc/passwd", id="dotdot-escape-from-dot-base"),
+            pytest.param(".", "/etc/passwd", id="absolute-absorbs-dot-base"),
+            pytest.param("incoming", "../.ssh/authorized_keys", id="dotdot-escape-from-nested-base"),
+            pytest.param("uploads/in", "../../etc/passwd", id="dotdot-escape-from-deeper-base"),
+        ],
+    )
+    def test_resolve_destination_path_rejects_escape_from_relative_base(
+        self, destination_path, source_object
+    ):
+        task = GCSToSFTPOperator(
+            task_id=TASK_ID,
+            source_bucket=TEST_BUCKET,
+            source_object="*",
+            destination_path=destination_path,
+            keep_directory_structure=True,
+            gcp_conn_id=GCP_CONN_ID,
+            sftp_conn_id=SFTP_CONN_ID,
+        )
+        with pytest.raises(ValueError, match="escapes configured destination_path"):
+            task._resolve_destination_path(source_object)
