@@ -335,3 +335,5 @@ dev/registry/providers.json
 /.github/skills/setup-override-upstream
 /.github/skills/setup-shared-config-sync
 /.github/skills/list-steward-*
+
+.github/actions
