@@ -12,11 +12,11 @@ AIRFLOW_SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PY=python3.14
 PY_VERSION=3.14
 
-# Read versions from VERSION file (format: AIRFLOW_VERSION.ODP_VERSION, e.g. 2.8.3.3.3.6.3-SNAPSHOT)
+# Read versions from VERSION file (format: AIRFLOW_VERSION.ODP_VERSION, e.g. 3.2.2.3.4.3.0-1)
 ODP_VERSION=$(cat "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')
 
 # Extract Airflow version from source code
-AIRFLOW_VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' "${AIRFLOW_SOURCE_ROOT}/airflow/__init__.py")
+AIRFLOW_VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' "${AIRFLOW_SOURCE_ROOT}/airflow-core/src/airflow/__init__.py")
 
 # Combined version for tarball naming
 ODP_AIRFLOW_VERSION="${AIRFLOW_VERSION}.${ODP_VERSION}"
@@ -86,105 +86,9 @@ fi
 
 echo "Python 3.14 is ready: $(${PY} --version)"
 
-# Step 3: Compile Frontend Assets (JS/CSS via Webpack)
+# Step 3: Build Tarball from Source
 echo ""
-echo "[Step 3] Compiling Frontend Assets (JavaScript/CSS)"
-echo ""
-echo "The Airflow web UI requires compiled JS/CSS bundles in airflow/www/static/dist/"
-echo "These are NOT checked into the source tree - they must be built via webpack/yarn."
-echo ""
-
-WWW_DIR="${AIRFLOW_SOURCE_ROOT}/airflow/www"
-DIST_DIR="${WWW_DIR}/static/dist"
-
-# Check if dist/ already exists with content (e.g., from a previous build)
-if [ -d "${DIST_DIR}" ] && [ "$(ls -A ${DIST_DIR} 2>/dev/null)" ]; then
-    echo "WARNING: ${DIST_DIR} already exists with content."
-    echo "Cleaning it to ensure a fresh build..."
-    rm -rf "${DIST_DIR}"
-fi
-
-# Install Node.js if not available
-if ! command -v node &>/dev/null; then
-    echo "Node.js not found. Installing Node.js 18.x..."
-
-    # Detect OS for Node.js installation
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        NODE_OS_ID="${ID}"
-    else
-        NODE_OS_ID="unknown"
-    fi
-
-    case "${NODE_OS_ID}" in
-        rhel|centos|rocky|almalinux|fedora)
-            curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-            yum install -y nodejs
-            ;;
-        ubuntu|debian)
-            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-            apt-get install -y nodejs
-            ;;
-        *)
-            echo "ERROR: Cannot auto-install Node.js on ${NODE_OS_ID}."
-            echo "Please install Node.js 18+ manually and re-run."
-            exit 1
-            ;;
-    esac
-fi
-
-echo "Node.js version: $(node --version)"
-echo "npm version: $(npm --version)"
-
-# Install yarn if not available
-if ! command -v yarn &>/dev/null; then
-    echo "Installing yarn via npm..."
-    npm install -g yarn
-fi
-echo "Yarn version: $(yarn --version)"
-
-# Build frontend assets
-echo ""
-echo "Running yarn install in ${WWW_DIR}..."
-cd "${WWW_DIR}"
-yarn install --frozen-lockfile
-
-echo ""
-echo "Running yarn build (webpack production build)..."
-yarn run build
-cd "${SCRIPT_DIR}"
-
-# Verify dist/ was created with expected files
-if [ ! -d "${DIST_DIR}" ]; then
-    echo "ERROR: Frontend build failed - ${DIST_DIR} was not created!"
-    exit 1
-fi
-
-DIST_FILE_COUNT=$(find "${DIST_DIR}" -type f | wc -l)
-if [ "${DIST_FILE_COUNT}" -lt 10 ]; then
-    echo "ERROR: Frontend build appears incomplete - only ${DIST_FILE_COUNT} files in ${DIST_DIR}"
-    exit 1
-fi
-
-# Check for critical files
-if [ ! -f "${DIST_DIR}/manifest.json" ]; then
-    echo "ERROR: manifest.json not found in ${DIST_DIR} - webpack build likely failed"
-    exit 1
-fi
-
-echo ""
-echo "Frontend build successful!"
-echo "Files in ${DIST_DIR}: ${DIST_FILE_COUNT}"
-echo "Key files:"
-ls -la "${DIST_DIR}/manifest.json"
-echo ""
-echo "Webpack entry points built:"
-ls "${DIST_DIR}"/*.js 2>/dev/null | head -20 || true
-echo ""
-
-# Step 4: Build Tarball from Source
-echo ""
-echo "[Step 4] Building Airflow Tarball from Source"
+echo "[Step 3] Building Airflow Tarball from Source"
 
 # Set C99 mode for compiling C extensions (required for gssapi, krb5)
 export CFLAGS="-std=gnu99"
@@ -200,21 +104,34 @@ $PY -m venv "${VENV_DIR}"
 echo "Activating virtual environment..."
 source "${VENV_DIR}/bin/activate"
 
-echo "Upgrading pip and installing build tools..."
-pip install --upgrade pip setuptools wheel Cython
+echo "Upgrading pip and installing uv..."
+# uv is required (not plain pip) so that local-path installs resolve the
+# [tool.uv.sources] workspace members (apache-airflow-core, apache-airflow-task-sdk)
+# from ${AIRFLOW_SOURCE_ROOT} instead of fetching released versions from PyPI.
+pip install --upgrade pip uv
 
-# Install build dependencies required by hatchling and C extensions (gssapi, krb5)
+echo "Installing setuptools, wheel, Cython..."
+uv pip install setuptools wheel Cython
+
+# Install build dependencies required by hatchling (must match airflow-core/pyproject.toml's
+# [build-system] requires, since --no-build-isolation skips pip's own resolution of these)
 echo "Installing build dependencies for Airflow..."
-pip install \
-    "GitPython==3.1.42" \
-    "hatchling==1.21.1" \
-    "editables==0.5" \
-    "gitdb==4.0.11" \
-    "packaging>=24.0" \
-    "pathspec==0.12.1" \
-    "pluggy==1.4.0" \
-    "smmap==5.0.1" \
-    "trove-classifiers==2024.3.3"
+uv pip install \
+    "GitPython==3.1.50" \
+    "gitdb==4.0.12" \
+    "hatchling==1.29.0" \
+    "packaging==26.2" \
+    "pathspec==1.1.1" \
+    "pluggy==1.6.0" \
+    "smmap==5.0.3" \
+    "tomli==2.4.1; python_version < '3.11'" \
+    "trove-classifiers==2026.5.20.19"
+
+# hatchling's custom build hook for apache-airflow-core (airflow-core/hatch_build.py) shells
+# out to `prek run --stage manual compile-ui-assets --all-files` to build the React/Vite UI
+# (airflow-core/src/airflow/ui) as part of the wheel build. prek must be on PATH for this.
+echo "Installing prek (required by airflow-core's UI asset build hook)..."
+uv pip install prek
 
 # Install Airflow from local source with specific extras
 # The extras are similar to what was in the original requirements.txt
@@ -226,20 +143,35 @@ echo "Source version: ${AIRFLOW_VERSION}"
 echo "pyproject.toml: ${AIRFLOW_SOURCE_ROOT}/pyproject.toml"
 echo "============================================"
 echo ""
-echo "NOTE: You should see 'Processing ${AIRFLOW_SOURCE_ROOT}' below (NOT 'Downloading apache-airflow')"
+echo "NOTE: You should see 'apache-airflow-core @ file://...' and"
+echo "'apache-airflow-task-sdk @ file://...' below (local workspace paths, NOT PyPI downloads)"
 echo ""
 
-# Define the extras we want (same as original requirements.txt but without 'mysql' which pulls mysqlclient)
-AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password"
+# Define the extras we want (same as the original requirements.txt, minus 'mysql' which pulls
+# mysqlclient, and minus 'crypto'/'password' which no longer exist as extras on apache-airflow==3.2.2:
+# cryptography is now a core apache-airflow-core dependency, and there is no 'password' extra)
+AIRFLOW_EXTRAS="celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async"
+
+# Use official Airflow 3.2.2 constraints to pin dependency versions (constraints-${PY_VERSION}.txt)
+CONSTRAINTS_FILE="${SCRIPT_DIR}/constraints-${PY_VERSION}.txt"
+
+if [ ! -f "${CONSTRAINTS_FILE}" ]; then
+    echo "ERROR: Constraints file not found at ${CONSTRAINTS_FILE}"
+    echo "This file is required for reproducible builds (Apache Airflow ${AIRFLOW_VERSION} / Python ${PY_VERSION})."
+    deactivate
+    exit 1
+fi
+
+echo "Using constraints file: ${CONSTRAINTS_FILE}"
 
 # Install Airflow from source with extras
 # Using --no-build-isolation to use already installed build dependencies
-pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation -v
+uv pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}"
 
 # Install additional dependencies from requirements-source.txt
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}"
+uv pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
@@ -273,8 +205,8 @@ cat "${BUILD_INFO_FILE}"
 # Verify Airflow is installed correctly from source
 echo ""
 echo "Verifying Airflow installation..."
-INSTALLED_VERSION=$(pip show apache-airflow 2>/dev/null | grep "^Version:" | cut -d' ' -f2 || echo "NOT INSTALLED")
-echo "Installed Airflow version: ${INSTALLED_VERSION}"
+INSTALLED_VERSION=$(uv pip show apache-airflow-core 2>/dev/null | grep "^Version:" | cut -d' ' -f2 || echo "NOT INSTALLED")
+echo "Installed apache-airflow-core version: ${INSTALLED_VERSION}"
 
 if [ "${INSTALLED_VERSION}" == "NOT INSTALLED" ]; then
     echo "ERROR: Airflow was not installed correctly"
@@ -282,55 +214,36 @@ if [ "${INSTALLED_VERSION}" == "NOT INSTALLED" ]; then
     exit 1
 fi
 
-# Verify frontend assets were included in the installed package
+# Verify the UI assets were built and included (hatchling build hook, see above)
 echo ""
-echo "Verifying frontend assets in installed package..."
-INSTALLED_AIRFLOW_WWW=$(${PY} -c "import airflow.www; import os; print(os.path.dirname(airflow.www.__file__))")
-INSTALLED_DIST_DIR="${INSTALLED_AIRFLOW_WWW}/static/dist"
+echo "Verifying UI assets in installed package..."
+INSTALLED_UI_DIR=$(${PY} -c "import airflow; import os; print(os.path.join(os.path.dirname(airflow.__file__), 'ui', 'dist'))")
 
-if [ ! -d "${INSTALLED_DIST_DIR}" ]; then
-    echo "ERROR: Frontend assets NOT found in installed package at ${INSTALLED_DIST_DIR}"
-    echo "The pip install did not include the compiled JS/CSS files."
-    echo "This means the Airflow web UI will be broken."
+if [ ! -d "${INSTALLED_UI_DIR}" ] || [ -z "$(ls -A "${INSTALLED_UI_DIR}" 2>/dev/null)" ]; then
+    echo "ERROR: UI assets NOT found in installed package at ${INSTALLED_UI_DIR}"
+    echo "The airflow-core wheel build did not produce the compiled UI (check that prek and"
+    echo "its 'compile-ui-assets' hook ran successfully during the pip/uv install above)."
     deactivate
     exit 1
 fi
 
-INSTALLED_DIST_COUNT=$(find "${INSTALLED_DIST_DIR}" -type f | wc -l)
-echo "Frontend assets in installed package: ${INSTALLED_DIST_COUNT} files"
-
-if [ "${INSTALLED_DIST_COUNT}" -lt 10 ]; then
-    echo "ERROR: Only ${INSTALLED_DIST_COUNT} frontend files found - expected many more."
-    echo "Contents of ${INSTALLED_DIST_DIR}:"
-    ls -la "${INSTALLED_DIST_DIR}/"
-    deactivate
-    exit 1
-fi
-
-if [ ! -f "${INSTALLED_DIST_DIR}/manifest.json" ]; then
-    echo "ERROR: manifest.json not found in installed package's dist directory"
-    deactivate
-    exit 1
-fi
-
-echo "Frontend assets verified OK (${INSTALLED_DIST_COUNT} files including manifest.json)"
+echo "UI assets verified OK at ${INSTALLED_UI_DIR}"
 
 # List installed packages for reference
 echo ""
 echo "Installed packages:"
-pip list
+uv pip list
 
 # Pack the environment
 echo ""
 echo "Packing environment..."
-pip install venv-pack
 venv-pack -o "${SCRIPT_DIR}/${TARBALL_NAME}"
 
 deactivate
 
-# Step 5: Verify Tarball Contents
+# Step 4: Verify Tarball Contents
 echo ""
-echo "[Step 5] Verifying Tarball Contents"
+echo "[Step 4] Verifying Tarball Contents"
 echo ""
 
 TARBALL_PATH="${SCRIPT_DIR}/${TARBALL_NAME}"
@@ -340,30 +253,6 @@ TARBALL_FILELIST="${SCRIPT_DIR}/${TARBALL_NAME%.tar.gz}_filelist.txt"
 tar tzf "${TARBALL_PATH}" | sort > "${TARBALL_FILELIST}"
 echo "Full file listing saved to: ${TARBALL_FILELIST}"
 
-# Check for critical frontend files (use saved file listing to avoid broken-pipe with pipefail)
-echo ""
-echo "Checking for frontend assets in tarball..."
-JS_COUNT=$(grep -c 'www/static/dist/.*\.js$' "${TARBALL_FILELIST}" || true)
-CSS_COUNT=$(grep -c 'www/static/dist/.*\.css$' "${TARBALL_FILELIST}" || true)
-MANIFEST_COUNT=$(grep -c 'www/static/dist/manifest\.json$' "${TARBALL_FILELIST}" || true)
-
-echo "  JS files in static/dist/:  ${JS_COUNT}"
-echo "  CSS files in static/dist/: ${CSS_COUNT}"
-echo "  manifest.json:             ${MANIFEST_COUNT}"
-
-if [ "${JS_COUNT}" -lt 5 ]; then
-    echo ""
-    echo "WARNING: Only ${JS_COUNT} JS files found in tarball! Expected 15+."
-    echo "The Airflow web UI may be broken."
-fi
-
-if [ "${MANIFEST_COUNT}" -eq 0 ]; then
-    echo ""
-    echo "ERROR: manifest.json NOT found in tarball! The Airflow web UI WILL be broken."
-    exit 1
-fi
-
-
 echo ""
 echo "============================================"
 echo "Successfully created ${TARBALL_NAME}"
@@ -372,8 +261,6 @@ echo "File listing: ${TARBALL_FILELIST}"
 echo ""
 echo "This tarball was built from LOCAL SOURCE CODE"
 echo "Any local patches in ${AIRFLOW_SOURCE_ROOT} are included"
-echo ""
-echo "Frontend assets: ${JS_COUNT} JS + ${CSS_COUNT} CSS files"
 echo ""
 echo "To diff with another tarball:"
 echo "  tar tzf other_tarball.tar.gz | sort > other_filelist.txt"
