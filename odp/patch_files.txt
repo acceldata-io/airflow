@@ -1,0 +1,13 @@
+# Files to overlay on top of stock Airflow after pip install.
+# One file per line, relative to the airflow source root (i.e. the parent of odp/).
+# Blank lines and lines starting with # are ignored.
+#
+# These files will be copied from your local source tree into the
+# installed site-packages, overriding the stock PyPI versions.
+#
+# Example:
+#   airflow/utils/log/secrets_masker.py
+#   airflow/models/dag.py
+#   airflow/providers/amazon/aws/hooks/base_aws.py
+
+airflow/utils/log/secrets_masker.py
