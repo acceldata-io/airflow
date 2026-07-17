@@ -27,6 +27,20 @@ apache-airflow-providers-cncf-kubernetes==10.0.1
 numpy
 pandas
 
+# XML processing and security
+lxml
+xmlsec
+
+# Markdown/doc rendering (used by Airflow web UI for DAG docs)
+Markdown
+docutils
+
+# Data validation (used by openlineage and other providers)
+pydantic
+
+# Retry logic (used by openlineage provider)
+backoff
+
 # Environment packing
 virtualenv
 venv-pack
