@@ -1,6 +1,6 @@
 # Python 3.11 Environment - Airflow 2.8.1
 # Generated on January 2026
-#  Source: Existing environment pip freeze from https://mirror.odp.acceldata.dev/ODP/PY-UTILS/airflow_environment_2_8_1.tar.gz
+#  Source: Existing environment pip freeze from https://mirror-stg.odp.acceldata.dev/ODP/PY-UTILS/airflow_environment_2_8_1.tar.gz
 # This represents the target package versions for Python 3.11 tarball
 
 Package                                  Version
