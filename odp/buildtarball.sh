@@ -103,6 +103,15 @@ sed -i '/^requests-oauthlib/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^websocket-client/d' "${LOCAL_CONSTRAINTS}"
 sed -i '/^apache-airflow-providers-cncf-kubernetes/d' "${LOCAL_CONSTRAINTS}"
 
+# Remove OpenLineage pins (overridden in requirements.txt to 1.14.0 provider + 1.24.2 client)
+sed -i '/^openlineage-python/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^openlineage-integration-common/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^openlineage[-_]sql/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^apache-airflow-providers-openlineage/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^apache-airflow-providers-common-sql/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^apache-airflow-providers-common-compat/d' "${LOCAL_CONSTRAINTS}"
+sed -i '/^sqlparse/d' "${LOCAL_CONSTRAINTS}"
+
 # Remove google-re2 constraint to allow fresh build with re2-devel
 sed -i '/^google-re2/d' "${LOCAL_CONSTRAINTS}"
 

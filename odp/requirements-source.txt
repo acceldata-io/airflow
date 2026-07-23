@@ -4,8 +4,19 @@
 
 PyMySQL==1.1.1
 
+# Pin versions to match the standalone (PyPI-built) tarball; constraints file
+# would otherwise downgrade these below what prod runs.
+apache-airflow-providers-cncf-kubernetes==10.0.1
+
+# NOTE: aiofiles stays at 23.2.1 (constraints file) because
+# gcloud-aio-storage requires aiofiles<24.0.0. The standalone PyPI-path build
+# does not include gcloud-aio and keeps aiofiles==24.1.0 in requirements.txt.
+
+# Required by apache-airflow-providers-openlineage >= 1.9.0
+# (imports airflow.providers.common.compat.assets.Asset)
+apache-airflow-providers-common-compat
+
 apache-airflow-providers-celery
-apache-airflow-providers-cncf-kubernetes
 apache-airflow-providers-apache-spark
 apache-airflow-providers-trino
 apache-airflow-providers-ssh

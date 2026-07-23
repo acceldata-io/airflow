@@ -7,7 +7,7 @@
 setuptools
 docutils
 pytest-runner
-Cython
+Cython==3.2.4
 
 # Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
 PyMySQL==1.1.1
@@ -23,6 +23,20 @@ kubernetes-asyncio==30.3.1
 platformdirs==4.3.7
 requests-oauthlib==2.0.0
 websocket-client==1.8.0
+
+# OpenLineage bump (upstream constraints pin 1.9.1)
+# Provider 1.14.0 requires client >= 1.24.2, so client stack is pinned there.
+openlineage-python==1.24.2
+openlineage-integration-common==1.24.2
+openlineage-sql==1.24.2
+
+# Provider bump to get modern AirflowDagRun facet, hook-level lineage, fileloc, etc.
+# Provider >= 1.9 requires apache-airflow-providers-common-compat.
+# Provider >= 1.14 requires common-sql >= 1.20.0, and common-sql 1.20.0 needs sqlparse >= 0.5.1.
+apache-airflow-providers-openlineage==1.14.0
+apache-airflow-providers-common-compat==1.2.2
+apache-airflow-providers-common-sql==1.20.0
+sqlparse==0.5.3
 
 # Core Airflow with specific extras (NOT using [all] to avoid mysql extra pulling mysqlclient)
 apache-airflow[celery,cncf.kubernetes,ldap,kerberos,statsd,openlineage,postgres,redis,ftp,http,imap,sqlite,async,crypto,password]==2.8.3
