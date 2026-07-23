@@ -201,7 +201,7 @@ echo "Activating virtual environment..."
 source "${VENV_DIR}/bin/activate"
 
 echo "Upgrading pip and installing build tools..."
-pip install --upgrade pip setuptools wheel Cython
+pip install --upgrade pip setuptools wheel "Cython==3.2.4"
 
 # Install build dependencies required by hatchling and C extensions (gssapi, krb5)
 echo "Installing build dependencies for Airflow..."

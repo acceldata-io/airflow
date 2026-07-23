@@ -147,6 +147,8 @@
     "validator": "^13.9.0"
   },
   "resolutions": {
-    "d3-color": "^3.1.0"
+    "d3-color": "^3.1.0",
+    "terser": "^5.31.0",
+    "terser-webpack-plugin": "^5.3.10"
   }
 }
