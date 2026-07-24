@@ -30,7 +30,7 @@
 #
 # pip install "apache-airflow==X.Y.Z" "snowflake-connector-python[pandas]=N.M.O"
 #
-Authlib==1.3.0
+Authlib==1.6.9
 Babel==2.14.0
 ConfigUpdater==3.2
 Deprecated==1.2.14
@@ -45,12 +45,12 @@ Flask-SQLAlchemy==2.5.1
 Flask-Session==0.5.0
 Flask-WTF==1.2.1
 Flask==2.2.5
-GitPython==3.1.41
+GitPython==3.1.50
 JPype1==1.5.0
 JayDeBeApi==1.2.3
 Jinja2==3.1.6
 Js2Py==0.74
-Mako==1.3.0
+Mako==1.3.12
 Markdown==3.5.2
 MarkupSafe==2.1.3
 PyGithub==2.1.1
@@ -282,7 +282,7 @@ email-validator==1.3.1
 entrypoints==0.4
 eralchemy2==1.3.8
 et-xmlfile==1.1.0
-eventlet==0.35.2
+eventlet==0.40.3
 execnet==2.0.2
 executing==2.0.1
 facebook-business==18.0.5
@@ -616,7 +616,7 @@ snowballstemmer==2.2.0
 snowflake-connector-python==3.6.0
 snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
-soupsieve==2.5
+soupsieve==2.8.4
 sphinx-airflow-theme==0.0.12
 sphinx-argparse==0.4.0
 sphinx-autoapi==2.1.1
@@ -657,7 +657,7 @@ thrift==0.16.0
 time-machine==2.13.0
 tomli_w==1.0.0
 tomlkit==0.12.3
-tornado==6.4
+tornado==6.5.6
 towncrier==23.11.0
 tqdm==4.66.1
 traitlets==5.14.1
