@@ -194,7 +194,7 @@ aws-sam-translator==1.83.0
 aws-xray-sdk==2.12.1
 azure-batch==14.1.0
 azure-common==1.1.28
-azure-core==1.29.6
+azure-core==1.38.0
 azure-cosmos==4.5.1
 azure-datalake-store==0.0.53
 azure-identity==1.15.0
