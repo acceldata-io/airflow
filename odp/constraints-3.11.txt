@@ -522,7 +522,7 @@ py-partiql-parser==0.5.0
 py4j==0.10.9.7
 pyOpenSSL==23.3.0
 pyarrow-hotfix==0.6
-pyarrow==14.0.2
+pyarrow==17.0.0
 pyasn1-modules==0.3.0
 pyasn1==0.5.1
 pycountry==23.12.11
