@@ -260,9 +260,21 @@ echo "Using constraints file: ${CONSTRAINTS_FILE}"
 pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
 
 # Install additional dependencies from requirements-source.txt
+#
+# The ODP pyspark provider is served from the ODP mirror, laid out as:
+#   <mirror>/staging/ODP-<release>/<daily-build>/standalone_tarballs/
+#   <release>     = committed odp/VERSION (e.g. 3.2.3.7-2), stable per release line
+#   <daily-build> = ODP_VERSION_WITH_BN exported by the odp-bigtop build (e.g. 3.2.3.7-2009)
+# For standalone runs (no odp-bigtop env) fall back to the release version.
+# SPARK3_FIND_LINKS overrides the whole URL if set.
+SPARK3_MIRROR_BASE="${SPARK3_MIRROR_BASE:-https://mirror-stg.odp.acceldata.dev/staging}"
+SPARK3_DAILY_BUILD="${ODP_VERSION_WITH_BN:-${ODP_VERSION}}"
+SPARK3_FIND_LINKS="${SPARK3_FIND_LINKS:-${SPARK3_MIRROR_BASE}/ODP-${ODP_VERSION}/${SPARK3_DAILY_BUILD}/standalone_tarballs/}"
+
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
+echo "ODP pyspark find-links: ${SPARK3_FIND_LINKS}"
+pip install -r "${REQUIREMENTS_FILE}" --find-links "${SPARK3_FIND_LINKS}" --constraint "${CONSTRAINTS_FILE}"
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
