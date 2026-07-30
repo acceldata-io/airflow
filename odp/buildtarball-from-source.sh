@@ -254,9 +254,27 @@ echo "Using constraints file: ${CONSTRAINTS_FILE}"
 pip install "${AIRFLOW_SOURCE_ROOT}[${AIRFLOW_EXTRAS}]" --no-build-isolation --constraint "${CONSTRAINTS_FILE}" -v
 
 # Install additional dependencies from requirements-source.txt
+#
+# The ODP pyspark provider is served from the ODP mirror, laid out as:
+#   <mirror>/staging/ODP-<release-line>/<daily-build>/standalone_tarballs/
+#   <daily-build>  = the full build version, e.g. 3.2.3.7-2009
+#   <release-line> = the stable release, e.g. 3.2.3.7-2
+# At build time the odp-bigtop version-stamp rewrites odp/VERSION (and every other
+# in-tree occurrence of the release string) to the daily build version, so ODP_VERSION
+# here is already the daily value (e.g. 3.2.3.7-2009). The daily build number is always
+# the release build number plus a 3-digit sequence, so the release line is the daily
+# with those last 3 digits stripped (3.2.3.7-2009 -> 3.2.3.7-2). It's assembled at
+# runtime on purpose: the literal release string must never appear in-tree or the stamp
+# would rewrite it to the daily value too. SPARK3_FIND_LINKS overrides the whole URL.
+SPARK3_MIRROR_BASE="${SPARK3_MIRROR_BASE:-https://mirror-stg.odp.acceldata.dev/staging}"
+SPARK3_DAILY_BUILD="${ODP_VERSION}"                 # e.g. 3.2.3.7-2009
+SPARK3_RELEASE_LINE="${SPARK3_DAILY_BUILD%???}"     # strip 3-digit daily seq -> 3.2.3.7-2
+SPARK3_FIND_LINKS="${SPARK3_FIND_LINKS:-${SPARK3_MIRROR_BASE}/ODP-${SPARK3_RELEASE_LINE}/${SPARK3_DAILY_BUILD}/standalone_tarballs/}"
+
 echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
-pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
+echo "ODP pyspark find-links: ${SPARK3_FIND_LINKS}"
+pip install -r "${REQUIREMENTS_FILE}" --find-links "${SPARK3_FIND_LINKS}" --constraint "${CONSTRAINTS_FILE}"
 
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"

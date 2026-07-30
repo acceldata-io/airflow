@@ -1,6 +1,10 @@
 # Additional dependencies for source-built Airflow tarball
 # Versions are controlled by constraints-3.11.txt (Apache Airflow 2.8.1; passed via --constraint flag)
 # Only pin versions here for packages NOT in the constraints file
+#
+# NOTE: the --find-links for the ODP pyspark provider is injected at build time
+# by buildtarball-from-source.sh (derived from ODP_VERSION + ODP_VERSION_WITH_BN),
+# not hardcoded here, since a pip requirements file cannot interpolate variables.
 
 PyMySQL==1.1.1
 
