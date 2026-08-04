@@ -30,7 +30,7 @@
 #
 # pip install "apache-airflow==X.Y.Z" "snowflake-connector-python[pandas]=N.M.O"
 #
-Authlib==1.3.0
+Authlib==1.6.9
 Babel==2.14.0
 ConfigUpdater==3.2
 Deprecated==1.2.14
@@ -45,12 +45,12 @@ Flask-SQLAlchemy==2.5.1
 Flask-Session==0.5.0
 Flask-WTF==1.2.1
 Flask==2.2.5
-GitPython==3.1.41
+GitPython==3.1.50
 JPype1==1.5.0
 JayDeBeApi==1.2.3
 Jinja2==3.1.6
 Js2Py==0.74
-Mako==1.3.0
+Mako==1.3.12
 Markdown==3.5.2
 MarkupSafe==2.1.3
 PyGithub==2.1.1
@@ -70,10 +70,11 @@ adal==1.2.7
 adlfs==2023.12.0
 aiobotocore==2.9.0
 aiofiles==23.2.1
-aiohttp==3.9.4
+aiohappyeyeballs==2.6.1
+aiohttp==3.13.3
 aioitertools==0.11.0
 aioresponses==0.7.6
-aiosignal==1.3.1
+aiosignal==1.4.0
 alabaster==0.7.16
 alembic==1.13.1
 alibabacloud-adb20211201==1.2.6
@@ -194,7 +195,7 @@ aws-sam-translator==1.83.0
 aws-xray-sdk==2.12.1
 azure-batch==14.1.0
 azure-common==1.1.28
-azure-core==1.29.6
+azure-core==1.38.0
 azure-cosmos==4.5.1
 azure-datalake-store==0.0.53
 azure-identity==1.15.0
@@ -282,7 +283,7 @@ email-validator==1.3.1
 entrypoints==0.4
 eralchemy2==1.3.8
 et-xmlfile==1.1.0
-eventlet==0.35.2
+eventlet==0.40.3
 execnet==2.0.2
 executing==2.0.1
 facebook-business==18.0.5
@@ -363,14 +364,14 @@ grpcio-status==1.60.0
 grpcio==1.60.0
 gssapi==1.8.3
 gunicorn==22.0.0
-h11==0.14.0
+h11==0.16.0
 hatch==1.9.1
 hatchling==1.21.0
 hdfs==2.7.3
 hmsclient==0.1.1
-httpcore==0.16.3
+httpcore==1.0.9
 httplib2==0.22.0
-httpx==0.23.3
+httpx==0.27.2
 humanize==4.9.0
 hvac==2.1.0
 hyperlink==21.0.0
@@ -511,6 +512,7 @@ presto-python-client==0.8.4
 prison==0.2.1
 prometheus-client==0.19.0
 prompt-toolkit==3.0.43
+propcache==0.3.2
 proto-plus==1.23.0
 protobuf==4.25.8
 psutil==5.9.7
@@ -574,7 +576,7 @@ pyzmq==25.1.2
 reactivex==4.0.4
 readme-renderer==42.0
 redis==4.6.0
-redshift-connector==2.0.918
+redshift-connector==2.1.7
 referencing==0.32.1
 regex==2023.12.25
 requests-file==1.5.1
@@ -613,10 +615,10 @@ smbprotocol==1.12.0
 smmap==5.0.1
 sniffio==1.3.0
 snowballstemmer==2.2.0
-snowflake-connector-python==3.6.0
+snowflake-connector-python==3.13.1
 snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
-soupsieve==2.5
+soupsieve==2.8.4
 sphinx-airflow-theme==0.0.12
 sphinx-argparse==0.4.0
 sphinx-autoapi==2.1.1
@@ -657,7 +659,7 @@ thrift==0.16.0
 time-machine==2.13.0
 tomli_w==1.0.0
 tomlkit==0.12.3
-tornado==6.4
+tornado==6.5.6
 towncrier==23.11.0
 tqdm==4.66.1
 traitlets==5.14.1
@@ -706,7 +708,7 @@ xmlsec==1.3.13
 xmltodict==0.13.0
 yamllint==1.33.0
 yandexcloud==0.253.0
-yarl==1.9.4
+yarl==1.20.1
 zeep==4.2.1
 zenpy==2.0.45
 zipp==3.17.0
