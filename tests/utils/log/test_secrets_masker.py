@@ -319,6 +319,20 @@ class TestSecretsMasker:
                 {"a": {"b": {"c": {"d": {"e": [{"token": "abc"}]}}}}},
                 {"a": {"b": {"c": {"d": {"e": [{"token": "***"}]}}}}},
             ),
+            # A sensitive key wrapped in a list beyond MAX_RECURSION_DEPTH is still
+            # redacted: the list is walked unconditionally, mirroring the unbounded dict
+            # walk above. Here the list sits at depth 6 (one past the cutoff), reached
+            # through the unbounded dict chain a..f.
+            (
+                {"a": {"b": {"c": {"d": {"e": {"f": [{"password": "leaked"}]}}}}}},
+                {"a": {"b": {"c": {"d": {"e": {"f": [{"password": "***"}]}}}}}},
+            ),
+            # Same for a tuple-wrapped sensitive key past MAX_RECURSION_DEPTH
+            # (a set cannot hold a dict, so only list/tuple are exercised here).
+            (
+                {"a": {"b": {"c": {"d": {"e": {"f": ({"token": "leaked"},)}}}}}},
+                {"a": {"b": {"c": {"d": {"e": {"f": ({"token": "***"},)}}}}}},
+            ),
         ],
     )
     def test_redact_masks_sensitive_keys_beyond_max_depth(self, val, expected):
