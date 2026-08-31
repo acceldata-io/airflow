@@ -298,12 +298,13 @@ class SecretsMasker(logging.Filter):
             log.warning(
                 "Unable to redact value of type %s, please report this via "
                 "<https://github.com/apache/airflow/issues>. Error was: %s: %s",
-                item,
+                type(item),
                 type(exc).__name__,
                 exc,
                 extra={self.ALREADY_FILTERED_FLAG: True},
             )
-            return item
+            # Rather than expose sensitive info, play it safe and drop the value.
+            return "<redaction-failed>"
 
     def redact(self, item: Redactable, name: str | None = None, max_depth: int | None = None) -> Redacted:
         """Redact an any secrets found in ``item``, if it is a string.

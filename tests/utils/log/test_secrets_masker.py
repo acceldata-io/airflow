@@ -341,6 +341,26 @@ class TestSecretsMasker:
         with patch("airflow.utils.log.secrets_masker._secrets_masker", return_value=secrets_masker):
             assert redact(val) == expected
 
+    def test_redact_fails_closed_when_redaction_raises(self):
+        """A value that cannot be redacted must not be returned in the clear.
+
+        Containers are walked without a depth bound, so a self-referential structure
+        recurses until Python's own limit and lands in the ``except`` handler.
+        Returning the item there would put the secret it carries straight into the
+        log, so the handler substitutes a placeholder instead.
+        """
+        secret = "hunter2"
+        looped: list = [{"password": secret}]
+        looped.append(looped)
+
+        secrets_masker = SecretsMasker()
+        secrets_masker.add_mask(secret)
+        with patch("airflow.utils.log.secrets_masker._secrets_masker", return_value=secrets_masker):
+            got = repr(redact(looped))
+
+        assert secret not in got
+        assert "<redaction-failed>" in got
+
     def test_redact_with_str_type(self, logger, caplog):
         """
         SecretsMasker's re2 replacer has issues handling a redactable item of type
