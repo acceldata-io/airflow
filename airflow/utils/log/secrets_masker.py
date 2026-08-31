@@ -255,9 +255,22 @@ class SecretsMasker(logging.Filter):
                     for dict_key, subval in item.items()
                 }
                 return to_return
-            # Avoid spending too much effort on pattern-based redaction of deeply nested
-            # non-dict structures. This also avoids excessive recursion if a structure has
-            # a reference to self.
+            # Always walk lists/tuples/sets too, mirroring the unconditional dict walk
+            # above, so a sensitive key wrapped in an iterable is still caught at any
+            # nesting depth. Self-referential iterables hit Python's own recursion limit
+            # and are caught by the except clause below, which fails closed.
+            if isinstance(item, (tuple, set)):
+                # Turn set in to tuple!
+                return tuple(
+                    self._redact(subval, name=None, depth=(depth + 1), max_depth=max_depth) for subval in item
+                )
+            if isinstance(item, list):
+                return [
+                    self._redact(subval, name=None, depth=(depth + 1), max_depth=max_depth) for subval in item
+                ]
+            # The depth cutoff only bounds the work of pattern-based string masking below:
+            # key-name redaction (dicts and iterables above) is unbounded so sensitive keys
+            # fail closed at any depth.
             if depth > max_depth:
                 return item
             if isinstance(item, Enum):
@@ -276,15 +289,6 @@ class SecretsMasker(logging.Filter):
                     # the structure.
                     return self.replacer.sub("***", str(item))
                 return item
-            elif isinstance(item, (tuple, set)):
-                # Turn set in to tuple!
-                return tuple(
-                    self._redact(subval, name=None, depth=(depth + 1), max_depth=max_depth) for subval in item
-                )
-            elif isinstance(item, list):
-                return [
-                    self._redact(subval, name=None, depth=(depth + 1), max_depth=max_depth) for subval in item
-                ]
             else:
                 return item
         # I think this should never happen, but it does not hurt to leave it just in case
@@ -294,12 +298,13 @@ class SecretsMasker(logging.Filter):
             log.warning(
                 "Unable to redact value of type %s, please report this via "
                 "<https://github.com/apache/airflow/issues>. Error was: %s: %s",
-                item,
+                type(item),
                 type(exc).__name__,
                 exc,
                 extra={self.ALREADY_FILTERED_FLAG: True},
             )
-            return item
+            # Rather than expose sensitive info, play it safe and drop the value.
+            return "<redaction-failed>"
 
     def redact(self, item: Redactable, name: str | None = None, max_depth: int | None = None) -> Redacted:
         """Redact an any secrets found in ``item``, if it is a string.
