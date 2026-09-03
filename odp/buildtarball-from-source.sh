@@ -12,7 +12,7 @@ AIRFLOW_SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PY=python3.14
 PY_VERSION=3.14
 
-# Read versions from VERSION file (format: AIRFLOW_VERSION.ODP_VERSION, e.g. 3.2.2.3.4.3.0-1)
+# Read versions from VERSION file (format: AIRFLOW_VERSION.ODP_VERSION, e.g. 3.2.2.3.4.3.0-SNAPSHOT)
 ODP_VERSION=$(cat "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')
 
 # Extract Airflow version from source code
