@@ -431,7 +431,7 @@ lazy-object-proxy==1.12.0
 libcst==1.8.6
 limits==5.8.0
 linkify-it-py==2.1.0
-litellm==1.82.6
+litellm==1.84.0
 lockfile==0.12.2
 logfire-api==4.33.0
 looker_sdk==26.8.0
