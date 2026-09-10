@@ -619,7 +619,7 @@ spython==0.3.14
 sqlalchemy-bigquery==1.17.0
 sqlalchemy-spanner==1.18.0
 sqlalchemy_drill==1.1.10
-sqlparse==0.5.5
+sqlparse==0.6.0
 stack-data==0.6.3
 starlette==1.1.0
 statsd==4.0.1
