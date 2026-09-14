@@ -71,7 +71,7 @@ adal==1.2.7
 adlfs==2024.2.0
 aiobotocore==2.11.2
 aiofiles==23.2.1
-aiohttp==3.13.4
+aiohttp==3.14.3
 aioitertools==0.11.0
 aioresponses==0.7.6
 aiosignal==1.4.0
@@ -260,7 +260,7 @@ coverage==7.4.3
 crcmod==1.7
 cron-descriptor==1.4.3
 croniter==2.0.2
-cryptography==43.0.1
+cryptography==48.0.1
 curlify==2.2.1
 databricks-sql-connector==2.9.4
 datadog==0.48.0
@@ -576,7 +576,7 @@ pyzmq==25.1.2
 reactivex==4.0.4
 readme_renderer==43.0
 redis==4.6.0
-redshift-connector==2.1.0
+redshift-connector==2.1.7
 referencing==0.33.0
 regex==2023.12.25
 requests-file==2.0.0
@@ -618,7 +618,7 @@ snowballstemmer==2.2.0
 snowflake-connector-python==3.7.1
 snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
-soupsieve==2.5
+soupsieve==2.8.4
 sphinx-airflow-theme==0.0.12
 sphinx-argparse==0.4.0
 sphinx-autoapi==2.1.1
@@ -641,7 +641,7 @@ sqlalchemy-bigquery==1.10.0
 sqlalchemy-drill==1.1.4
 sqlalchemy-redshift==0.8.14
 sqlalchemy-spanner==1.6.2
-sqlparse==0.5.4
+sqlparse==0.6.0
 sshtunnel==0.4.0
 stack-data==0.6.3
 starkbank-ecdsa==2.2.0
@@ -658,7 +658,7 @@ thrift==0.16.0
 time-machine==2.14.0
 tomli_w==1.0.0
 tomlkit==0.12.4
-tornado==6.5.5
+tornado==6.5.8
 towncrier==23.11.0
 tqdm==4.66.2
 traitlets==5.14.2
