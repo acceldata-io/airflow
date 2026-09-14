@@ -658,7 +658,7 @@ thrift==0.16.0
 time-machine==2.14.0
 tomli_w==1.0.0
 tomlkit==0.12.4
-tornado==6.5.5
+tornado==6.5.8
 towncrier==23.11.0
 tqdm==4.66.2
 traitlets==5.14.2
