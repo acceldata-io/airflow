@@ -56,27 +56,28 @@ else
     echo "Skipping prerequisites installation..."
 fi
 
+#Commenting out Python installation
 # Step 2: Install Python 3.14
-echo ""
-echo "[Step 2] Installing Python 3.14"
-
-PYTHON_SCRIPT="${SCRIPT_DIR}/install_python314.sh"
-if [ -f "${PYTHON_SCRIPT}" ]; then
-    echo "Running install_python314.sh..."
-    chmod +x "${PYTHON_SCRIPT}"
-    bash "${PYTHON_SCRIPT}"
-else
-    echo "ERROR: install_python314.sh not found at ${PYTHON_SCRIPT}"
-    exit 1
-fi
-
-# Verify Python 3.14 is available
-if ! command -v ${PY} &>/dev/null; then
-    echo "ERROR: ${PY} is not available after installation"
-    exit 1
-fi
-
-echo "Python 3.14 is ready: $(${PY} --version)"
+#echo ""
+#echo "[Step 2] Installing Python 3.14"
+#
+#PYTHON_SCRIPT="${SCRIPT_DIR}/install_python314.sh"
+#if [ -f "${PYTHON_SCRIPT}" ]; then
+#    echo "Running install_python314.sh..."
+#    chmod +x "${PYTHON_SCRIPT}"
+#    bash "${PYTHON_SCRIPT}"
+#else
+#    echo "ERROR: install_python314.sh not found at ${PYTHON_SCRIPT}"
+#    exit 1
+#fi
+#
+## Verify Python 3.14 is available
+#if ! command -v ${PY} &>/dev/null; then
+#    echo "ERROR: ${PY} is not available after installation"
+#    exit 1
+#fi
+#
+#echo "Python 3.14 is ready: $(${PY} --version)"
 
 # Step 3: Build Tarball
 echo ""
