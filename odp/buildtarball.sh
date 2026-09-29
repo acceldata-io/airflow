@@ -113,7 +113,7 @@ export CXXFLAGS="-std=gnu99"
 echo "CFLAGS set to: ${CFLAGS}"
 
 echo "Creating virtual environment with ${PY}..."
-$PY -m venv airflow
+python -m venv airflow
 
 echo "Activating virtual environment..."
 source airflow/bin/activate
@@ -142,7 +142,7 @@ else
 fi
 
 # Get actual Python version
-PYTHON_FULL_VERSION=$(${PY} --version 2>&1 | awk '{print $2}')
+PYTHON_FULL_VERSION=$(python --version 2>&1 | awk '{print $2}')
 
 cat > "${BUILD_INFO_FILE}" <<EOF
 AIRFLOW_VERSION=${AIRFLOW_VERSION}
