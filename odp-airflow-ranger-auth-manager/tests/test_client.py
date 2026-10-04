@@ -57,6 +57,22 @@ def test_handshake_refuses_missing_authorize_capability(agent):
         _client(agent).handshake("3.2.2")
 
 
+def test_handshake_refuses_missing_filter_capability(agent):
+    # An agent predating /v1/filter must be rejected at startup, not on the
+    # first Dag list load.
+    agent.info_body["capabilities"] = ["authorize"]
+    with pytest.raises(RangerAuthzHandshakeError, match="filter"):
+        _client(agent).handshake("3.2.2")
+
+
+def test_handshake_reports_every_missing_capability(agent):
+    agent.info_body["capabilities"] = []
+    with pytest.raises(RangerAuthzHandshakeError) as excinfo:
+        _client(agent).handshake("3.2.2")
+    assert "authorize" in str(excinfo.value)
+    assert "filter" in str(excinfo.value)
+
+
 def test_handshake_refuses_unsupported_airflow(agent):
     with pytest.raises(RangerAuthzHandshakeError, match="outside agent supported_airflow"):
         _client(agent).handshake("3.1.0")

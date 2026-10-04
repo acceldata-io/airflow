@@ -32,7 +32,7 @@ from odp_airflow_ranger_auth_manager.config import RangerClientConfig
 from odp_airflow_ranger_auth_manager.constants import (
     CONTRACT_VERSION,
     MAX_FILTER_KEYS,
-    REQUIRED_CAPABILITY,
+    REQUIRED_CAPABILITIES,
 )
 from odp_airflow_ranger_auth_manager.exceptions import RangerAuthzHandshakeError
 from odp_airflow_ranger_auth_manager.request_context import RequestContext
@@ -98,9 +98,13 @@ class RangerAuthzClient:
             raise RangerAuthzHandshakeError(
                 f"contract_version {info.contract_version!r} is not {CONTRACT_VERSION!r}"
             )
-        if REQUIRED_CAPABILITY not in info.capabilities:
+        missing = [cap for cap in REQUIRED_CAPABILITIES if cap not in info.capabilities]
+        if missing:
             raise RangerAuthzHandshakeError(
-                f"agent capabilities {list(info.capabilities)} do not include {REQUIRED_CAPABILITY!r}"
+                f"agent at {self._config.agent_url} is missing required "
+                f"{'capability' if len(missing) == 1 else 'capabilities'} {missing}; "
+                f"it advertises {list(info.capabilities)}. Upgrade the "
+                f"ranger-airflow-authz-agent to a build that implements them."
             )
         if not _airflow_supported(info.supported_airflow, airflow_version):
             raise RangerAuthzHandshakeError(
