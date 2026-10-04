@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from collections.abc import Iterable
 from typing import Any
 
 import urllib3
@@ -28,7 +29,11 @@ from urllib3.exceptions import HTTPError as Urllib3HTTPError
 from urllib3.util.timeout import Timeout
 
 from odp_airflow_ranger_auth_manager.config import RangerClientConfig
-from odp_airflow_ranger_auth_manager.constants import CONTRACT_VERSION, REQUIRED_CAPABILITY
+from odp_airflow_ranger_auth_manager.constants import (
+    CONTRACT_VERSION,
+    MAX_FILTER_KEYS,
+    REQUIRED_CAPABILITY,
+)
 from odp_airflow_ranger_auth_manager.exceptions import RangerAuthzHandshakeError
 from odp_airflow_ranger_auth_manager.request_context import RequestContext
 
@@ -135,6 +140,81 @@ class RangerAuthzClient:
             log.warning("ranger authorize response malformed; denying")
             return _deny_all(checks, "malformed_response")
         return decisions
+
+    def filter_keys(
+        self,
+        user: str,
+        context: RequestContext,
+        resource_type: str,
+        method: str,
+        keys: Iterable[str],
+        access_entity: str | None = None,
+    ) -> frozenset[str]:
+        """POST /v1/filter -- the permitted subset of ``keys``.
+
+        One question shape across many candidates, audited by the agent as a
+        single event rather than one per key. Fails closed to an empty set,
+        which renders an empty page; returning the input on failure would show
+        every row to everyone the moment the agent hiccups.
+        """
+        # Deduplicate and drop blanks while preserving order: asking twice
+        # about one key is meaningless, and a blank key has no resource.
+        unique = [key for key in dict.fromkeys(keys) if key]
+        if not unique:
+            return frozenset()
+
+        allowed: set[str] = set()
+        for start in range(0, len(unique), MAX_FILTER_KEYS):
+            chunk = unique[start : start + MAX_FILTER_KEYS]
+            subset = self._filter_chunk(user, context, resource_type, method, chunk, access_entity)
+            if subset is None:
+                # Fail the whole call, not just the chunk. A partial subset
+                # looks like success while silently hiding rows the user may
+                # actually see, and which rows survive depends on which chunk
+                # failed -- unexplainable to whoever is looking at the page.
+                return frozenset()
+            allowed.update(subset)
+        return frozenset(allowed)
+
+    def _filter_chunk(
+        self,
+        user: str,
+        context: RequestContext,
+        resource_type: str,
+        method: str,
+        chunk: list[str],
+        access_entity: str | None,
+    ) -> set[str] | None:
+        """@return the permitted subset, or None when the call failed."""
+        payload: dict[str, Any] = {
+            "user": user,
+            "context": context.to_payload(),
+            "resource_type": resource_type,
+            "method": method,
+            "keys": chunk,
+        }
+        if access_entity:
+            payload["access_entity"] = access_entity
+        try:
+            status, body = self._request("POST", "/v1/filter", payload)
+        except Exception:
+            log.warning("ranger filter transport error; denying", exc_info=True)
+            return None
+        if status != 200 or not isinstance(body, dict):
+            log.warning("ranger filter returned %s; denying", status)
+            return None
+        raw = body.get("allowed_keys")
+        if not isinstance(raw, list):
+            log.warning("ranger filter response malformed; denying")
+            return None
+        subset = {str(key) for key in raw}
+        if not subset <= set(chunk):
+            # The contract says allowed_keys is a subset of keys. Anything else
+            # is a broken or impersonating agent, and granting on it would be
+            # authorizing a resource nobody asked about.
+            log.warning("ranger filter returned unrequested keys; denying")
+            return None
+        return subset
 
     def _request(self, method: str, path: str, json_body: dict[str, Any] | None = None) -> tuple[int, Any]:
         headers = {
