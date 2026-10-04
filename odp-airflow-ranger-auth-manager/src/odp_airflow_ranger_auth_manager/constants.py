@@ -25,7 +25,14 @@ DEFAULT_CONNECT_TIMEOUT = 0.2
 DEFAULT_READ_TIMEOUT = 2.0
 
 CONTRACT_VERSION = "v1"
-REQUIRED_CAPABILITY = "authorize"
+
+# Endpoints this client version calls. contract_version pins the *shape* of the
+# API; capabilities say which parts of it a given agent build implements. A
+# missing one has to fail the handshake rather than the first request that needs
+# it -- otherwise a wheel that needs filter starts cleanly against an older
+# agent and the Dag list is the thing that breaks, in production, silently.
+REQUIRED_CAPABILITIES = ("authorize", "filter")
+
 MIN_TOKEN_BYTES = 32
 
 # Keys per /v1/filter call. The agent rejects more with a 400, so the client

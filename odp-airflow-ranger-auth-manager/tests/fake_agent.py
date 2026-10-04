@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 from typing import Any
@@ -24,9 +25,24 @@ INFO_OK = {
     "ranger_service": "odp_airflow",
     "service_def_version": 3,
     "supported_airflow": ">=3.2,<3.3",
-    "capabilities": ["authorize"],
+    "capabilities": ["authorize", "filter"],
     "user_store_version": 9,
 }
+
+
+class _QuietServer(ThreadingHTTPServer):
+    """Keeps expected disconnects out of the test output.
+
+    The timeout test hangs up mid-response on purpose, so the write fails.
+    Swallow only that; anything else is a real bug in the fake and should
+    still be loud.
+    """
+
+    def handle_error(self, request, client_address):
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
 
 
 class FakeAgent:
@@ -45,7 +61,7 @@ class FakeAgent:
         self.last_authorize: dict[str, Any] | None = None
         self.last_headers: dict[str, str] | None = None
         handler = self._handler()
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        self.server = _QuietServer(("127.0.0.1", 0), handler)
         self.thread = Thread(target=self.server.serve_forever, daemon=True)
 
     @property
