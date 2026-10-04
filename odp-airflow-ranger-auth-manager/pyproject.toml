@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "odp-airflow-ranger-auth-manager"
+version = "0.1.0"
+description = "Apache Ranger authorization manager for Apache Airflow 3.2.x (ODP)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "Acceldata Inc."}]
+dependencies = [
+    "apache-airflow>=3.2.0,<3.3",
+    "apache-airflow-providers-fab",
+    "packaging",
+    "urllib3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.entry-points."airflow.plugins"]
+ranger_authz_request_context = "odp_airflow_ranger_auth_manager.plugin:RangerAuthzPlugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
