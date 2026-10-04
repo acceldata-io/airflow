@@ -34,6 +34,11 @@ class FakeAgent:
         self.token = token
         self.authorize_status = 200
         self.authorize_body: dict[str, Any] | None = None
+        self.filter_status = 200
+        self.filter_body: dict[str, Any] | None = None
+        # None allows every requested key; a set allows only its members.
+        self.filter_allowed: set[str] | None = None
+        self.filter_calls: list[dict[str, Any]] = []
         self.info_status = 200
         self.info_body: dict[str, Any] = dict(INFO_OK)
         self.sleep_s = 0.0
@@ -74,7 +79,7 @@ class FakeAgent:
                 self._send(agent.info_status, agent.info_body)
 
             def do_POST(self):
-                if self.path != "/v1/authorize":
+                if self.path not in ("/v1/authorize", "/v1/filter"):
                     self._send(404, {"error": "not_found"})
                     return
                 if not self._authorized():
@@ -82,11 +87,30 @@ class FakeAgent:
                     return
                 length = int(self.headers.get("Content-Length", "0"))
                 raw = self.rfile.read(length) if length else b"{}"
-                agent.last_authorize = json.loads(raw.decode("utf-8"))
+                parsed = json.loads(raw.decode("utf-8"))
                 if agent.sleep_s:
                     import time
 
                     time.sleep(agent.sleep_s)
+                if self.path == "/v1/filter":
+                    agent.filter_calls.append(parsed)
+                    body = agent.filter_body
+                    if body is None:
+                        keys = parsed.get("keys") or []
+                        allowed = (
+                            list(keys)
+                            if agent.filter_allowed is None
+                            else [k for k in keys if k in agent.filter_allowed]
+                        )
+                        body = {
+                            "policy_version": 1,
+                            "allowed_keys": allowed,
+                            "evaluated": len(keys),
+                            "elapsed_ms": 0,
+                        }
+                    self._send(agent.filter_status, body)
+                    return
+                agent.last_authorize = parsed
                 body = agent.authorize_body
                 if body is None:
                     checks = agent.last_authorize.get("checks") or []
