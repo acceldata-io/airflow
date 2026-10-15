@@ -6,10 +6,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-# Interpreter comes from bigtop: accelbuild --python-version exports PYTHON3_VERSION,
-# bigtop.bom turns it into python3_version and packages.gradle passes it to
-# do-component-build as PYTHON_VER (e.g. python3.12). PY overrides for standalone runs.
-PY=${PY:-${PYTHON_VER:-${PYTHON3_VERSION:-python3.11}}}
+# Interpreter comes from accelbuild --python-version, exported to the build as
+# PYTHON3_VERSION (e.g. python3.12); defaults to python3.11 for standalone runs.
+PY=${PYTHON3_VERSION:-python3.11}
 PY_VERSION=${PY#python}
 AIRFLOW_VERSION=3.2.2
 
