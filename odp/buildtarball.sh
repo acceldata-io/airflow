@@ -6,9 +6,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-PY=python3.14
-PY_VERSION=3.14
+# Interpreter comes from bigtop: accelbuild --python-version exports PYTHON3_VERSION,
+# bigtop.bom turns it into python3_version and packages.gradle passes it to
+# do-component-build as PYTHON_VER (e.g. python3.12). PY overrides for standalone runs.
+PY=${PY:-${PYTHON_VER:-${PYTHON3_VERSION:-python3.11}}}
+PY_VERSION=${PY#python}
 AIRFLOW_VERSION=3.2.2
+
+if ! command -v "${PY}" &>/dev/null; then
+    echo "ERROR: ${PY} not found on PATH"
+    exit 1
+fi
 
 # Read ODP version from VERSION file
 VERSION_FILE="${SCRIPT_DIR}/VERSION"
@@ -33,6 +41,7 @@ echo "Airflow Tarball Builder"
 echo "Airflow Version: ${AIRFLOW_VERSION}"
 echo "ODP Version: ${ODP_VERSION}"
 echo "Combined Version: ${ODP_AIRFLOW_VERSION}"
+echo "Python: ${PY} ($(${PY} --version 2>&1))"
 echo "Tarball: ${TARBALL_NAME}"
 echo "============================================"
 
@@ -85,7 +94,7 @@ echo "[Step 3] Building Airflow Tarball"
 
 # Download and modify constraints file
 echo "Downloading constraints file..."
-curl -sL "${CONSTRAINTS_URL}" -o "${LOCAL_CONSTRAINTS}"
+curl -fsSL "${CONSTRAINTS_URL}" -o "${LOCAL_CONSTRAINTS}"
 
 echo "Modifying constraints file..."
 # Remove mysqlclient (we use PyMySQL instead)
@@ -113,7 +122,7 @@ export CXXFLAGS="-std=gnu99"
 echo "CFLAGS set to: ${CFLAGS}"
 
 echo "Creating virtual environment with ${PY}..."
-python -m venv airflow
+"${PY}" -m venv airflow
 
 echo "Activating virtual environment..."
 source airflow/bin/activate
