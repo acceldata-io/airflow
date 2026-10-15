@@ -6,16 +6,18 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-# Interpreter comes from accelbuild --python-version, exported to the build as
-# PYTHON3_VERSION (e.g. python3.12); defaults to python3.11 for standalone runs.
-PY=${PYTHON3_VERSION:-python3.11}
-PY_VERSION=${PY#python}
+# bigtop passes the interpreter as PYTHON_VER (e.g. python3.12), taken from
+# stack.odp.python3_version in bigtop.bom. Set PY to override it for standalone runs.
+PY=${PY:-${PYTHON_VER:-python3.11}}
 AIRFLOW_VERSION=3.2.2
 
 if ! command -v "${PY}" &>/dev/null; then
     echo "ERROR: ${PY} not found on PATH"
     exit 1
 fi
+
+# Get major.minor from the interpreter itself, so PY can also be a path or "python3"
+PY_VERSION=$("${PY}" -c 'import sys; print("%d.%d" % sys.version_info[:2])')
 
 # Read ODP version from VERSION file
 VERSION_FILE="${SCRIPT_DIR}/VERSION"
@@ -40,7 +42,7 @@ echo "Airflow Tarball Builder"
 echo "Airflow Version: ${AIRFLOW_VERSION}"
 echo "ODP Version: ${ODP_VERSION}"
 echo "Combined Version: ${ODP_AIRFLOW_VERSION}"
-echo "Python: ${PY} ($(${PY} --version 2>&1))"
+echo "Python: ${PY} ($("${PY}" --version 2>&1))"
 echo "Tarball: ${TARBALL_NAME}"
 echo "============================================"
 
@@ -64,36 +66,16 @@ else
     echo "Skipping prerequisites installation..."
 fi
 
-#Commenting out Python installation
-# Step 2: Install Python 3.14
-#echo ""
-#echo "[Step 2] Installing Python 3.14"
-#
-#PYTHON_SCRIPT="${SCRIPT_DIR}/install_python314.sh"
-#if [ -f "${PYTHON_SCRIPT}" ]; then
-#    echo "Running install_python314.sh..."
-#    chmod +x "${PYTHON_SCRIPT}"
-#    bash "${PYTHON_SCRIPT}"
-#else
-#    echo "ERROR: install_python314.sh not found at ${PYTHON_SCRIPT}"
-#    exit 1
-#fi
-#
-## Verify Python 3.14 is available
-#if ! command -v ${PY} &>/dev/null; then
-#    echo "ERROR: ${PY} is not available after installation"
-#    exit 1
-#fi
-#
-#echo "Python 3.14 is ready: $(${PY} --version)"
-
 # Step 3: Build Tarball
 echo ""
 echo "[Step 3] Building Airflow Tarball"
 
 # Download and modify constraints file
 echo "Downloading constraints file..."
-curl -fsSL "${CONSTRAINTS_URL}" -o "${LOCAL_CONSTRAINTS}"
+if ! curl -fsSL "${CONSTRAINTS_URL}" -o "${LOCAL_CONSTRAINTS}"; then
+    echo "ERROR: no Airflow ${AIRFLOW_VERSION} constraints for Python ${PY_VERSION}: ${CONSTRAINTS_URL}"
+    exit 1
+fi
 
 echo "Modifying constraints file..."
 # Remove mysqlclient (we use PyMySQL instead)
