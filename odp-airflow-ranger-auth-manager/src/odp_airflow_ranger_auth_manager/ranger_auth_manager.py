@@ -13,7 +13,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from airflow.api_fastapi.auth.managers.base_auth_manager import BaseAuthManager
 from airflow.providers.fab.auth_manager.fab_auth_manager import FabAuthManager
+from airflow.utils.session import NEW_SESSION
 
 from odp_airflow_ranger_auth_manager.client import AuthorizeCheck, RangerAuthzClient
 from odp_airflow_ranger_auth_manager.config import RangerClientConfig
@@ -31,6 +33,10 @@ from odp_airflow_ranger_auth_manager.constants import (
 from odp_airflow_ranger_auth_manager.request_context import current_request_context
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from sqlalchemy.orm import Session
+
     from airflow.api_fastapi.auth.managers.base_auth_manager import ResourceMethod
     from airflow.api_fastapi.auth.managers.models.resource_details import (
         AccessView,
@@ -105,6 +111,102 @@ class RangerAuthManager(FabAuthManager):
             log.exception("ranger authorize failed; denying %s access", resource_type)
             return False
         return bool(decisions) and decisions[0].allowed
+
+    def _filter(self, resource_type: str, method: str, user: User, keys: Iterable[str]) -> set[str]:
+        """Narrow ``keys`` to the permitted subset in one agent round trip.
+
+        One ``/v1/filter`` call rather than one ``/v1/authorize`` per key: a
+        998-Dag list is one request and one audit record instead of 998 of
+        each. Fails closed to an empty set.
+        """
+        if self._client is None:
+            log.error("ranger authz client is not initialized; returning no %s", resource_type)
+            return set()
+        try:
+            return set(
+                self._client.filter_keys(
+                    user.get_name(),
+                    current_request_context(),
+                    resource_type,
+                    method,
+                    keys,
+                )
+            )
+        except Exception:
+            log.exception("ranger filter failed; returning no %s", resource_type)
+            return set()
+
+    # ------------------------------------------------------------------
+    # List filtering.
+    #
+    # FabAuthManager overrides get_authorized_{dag_ids,connections,pools,
+    # variables} with role lookups that never consult the agent -- its
+    # get_authorized_dag_ids returns every row in DagModel as soon as the FAB
+    # role allows "read on DAGs", which is why a user granted dag=etl_* still
+    # saw all 998. Delegating to BaseAuthManager restores the correct shape:
+    # it loads the candidates and calls filter_authorized_*, which is
+    # overridden below to answer from Ranger in a single call.
+    # ------------------------------------------------------------------
+
+    def get_authorized_dag_ids(
+        self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
+    ) -> set[str]:
+        return BaseAuthManager.get_authorized_dag_ids(self, user=user, method=method, session=session)
+
+    def filter_authorized_dag_ids(
+        self,
+        *,
+        dag_ids: set[str],
+        user: User,
+        method: ResourceMethod = "GET",
+        team_name: str | None = None,
+    ) -> set[str]:
+        return self._filter(RESOURCE_TYPE_DAG, _method_str(method), user, dag_ids)
+
+    def get_authorized_connections(
+        self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
+    ) -> set[str]:
+        return BaseAuthManager.get_authorized_connections(self, user=user, method=method, session=session)
+
+    def filter_authorized_connections(
+        self,
+        *,
+        conn_ids: set[str],
+        user: User,
+        method: ResourceMethod = "GET",
+        team_name: str | None = None,
+    ) -> set[str]:
+        return self._filter(RESOURCE_TYPE_CONNECTION, _method_str(method), user, conn_ids)
+
+    def get_authorized_pools(
+        self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
+    ) -> set[str]:
+        return BaseAuthManager.get_authorized_pools(self, user=user, method=method, session=session)
+
+    def filter_authorized_pools(
+        self,
+        *,
+        pool_names: set[str],
+        user: User,
+        method: ResourceMethod = "GET",
+        team_name: str | None = None,
+    ) -> set[str]:
+        return self._filter(RESOURCE_TYPE_POOL, _method_str(method), user, pool_names)
+
+    def get_authorized_variables(
+        self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
+    ) -> set[str]:
+        return BaseAuthManager.get_authorized_variables(self, user=user, method=method, session=session)
+
+    def filter_authorized_variables(
+        self,
+        *,
+        variable_keys: set[str],
+        user: User,
+        method: ResourceMethod = "GET",
+        team_name: str | None = None,
+    ) -> set[str]:
+        return self._filter(RESOURCE_TYPE_VARIABLE, _method_str(method), user, variable_keys)
 
     def is_authorized_dag(
         self,

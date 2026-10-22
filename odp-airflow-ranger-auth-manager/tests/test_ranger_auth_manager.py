@@ -27,6 +27,13 @@ from odp_airflow_ranger_auth_manager.request_context import (
 )
 
 
+# The candidate rows a list endpoint would load before filtering.
+_ALL_DAG_IDS = {"etl_0001", "etl_0002", "finance_0001", "ops_0001"}
+_ALL_CONN_IDS = {"prod_db", "staging_db", "s3_logs"}
+_ALL_POOL_NAMES = {"default_pool", "gpu_pool"}
+_ALL_VAR_KEYS = {"api_token", "region"}
+
+
 def _ensure_airflow_stubs() -> None:
     try:
         from airflow.providers.fab.auth_manager.fab_auth_manager import FabAuthManager  # noqa: F401
@@ -117,12 +124,77 @@ def _ensure_airflow_stubs() -> None:
     details.ConfigurationDetails = ConfigurationDetails
     details.AccessView = AccessView
 
-    class FabAuthManager:
+    # The stub classes below must mirror which methods the REAL classes own.
+    # test_no_authorization_decision_is_left_to_fab reflects over them, so a
+    # method missing here is a hole the test cannot see.
+    class BaseAuthManager:
+        """Only the parts the auth manager delegates to or is measured against."""
+
         def __init__(self):
             pass
 
         def init(self) -> None:
             pass
+
+        # Base loads the candidate set, then defers to filter_authorized_*.
+        # That delegation is the behaviour RangerAuthManager relies on.
+        def get_authorized_dag_ids(self, *, user, method="GET", session=None):
+            return self.filter_authorized_dag_ids(dag_ids=_ALL_DAG_IDS, user=user, method=method)
+
+        def get_authorized_connections(self, *, user, method="GET", session=None):
+            return self.filter_authorized_connections(conn_ids=_ALL_CONN_IDS, user=user, method=method)
+
+        def get_authorized_pools(self, *, user, method="GET", session=None):
+            return self.filter_authorized_pools(pool_names=_ALL_POOL_NAMES, user=user, method=method)
+
+        def get_authorized_variables(self, *, user, method="GET", session=None):
+            return self.filter_authorized_variables(variable_keys=_ALL_VAR_KEYS, user=user, method=method)
+
+        def get_authorized_teams(self, *, user, method="GET", session=None):
+            return set()
+
+        def get_authorized_menu_items(self, *, user):
+            return []
+
+        def filter_authorized_dag_ids(self, *, dag_ids, user, method="GET", team_name=None):
+            return {d for d in dag_ids if self.is_authorized_dag(method=method, user=user)}
+
+        def filter_authorized_connections(self, *, conn_ids, user, method="GET", team_name=None):
+            return set()
+
+        def filter_authorized_pools(self, *, pool_names, user, method="GET", team_name=None):
+            return set()
+
+        def filter_authorized_variables(self, *, variable_keys, user, method="GET", team_name=None):
+            return set()
+
+        def filter_authorized_teams(self, *, teams, user):
+            return set()
+
+        def filter_authorized_menu_items(self, menu_items, *, user):
+            return []
+
+        def batch_is_authorized_dag(self, requests, *, user):
+            return True
+
+        def is_authorized_team(self, **kwargs):
+            return False
+
+        def is_authorized_hitl_task(self, **kwargs):
+            return False
+
+    base_mod = ensure("airflow.api_fastapi.auth.managers.base_auth_manager")
+    base_mod.BaseAuthManager = BaseAuthManager
+
+    session_mod = ensure("airflow.utils.session")
+    session_mod.NEW_SESSION = None
+
+    class FabAuthManager(BaseAuthManager):
+        """Mirrors exactly which methods the real FabAuthManager owns.
+
+        The get_authorized_* four are the bug this ticket fixes: FAB answers
+        them from role lookups and returns every row, never consulting Ranger.
+        """
 
         def is_authorized_connection(self, **kwargs):
             return False
@@ -139,6 +211,9 @@ def _ensure_airflow_stubs() -> None:
         def is_authorized_dag(self, **kwargs):
             return False
 
+        def is_authorized_backfill(self, **kwargs):
+            return False
+
         def is_authorized_asset(self, **kwargs):
             return False
 
@@ -150,6 +225,21 @@ def _ensure_airflow_stubs() -> None:
 
         def is_authorized_custom_view(self, **kwargs):
             return False
+
+        def filter_authorized_menu_items(self, menu_items, *, user):
+            return menu_items
+
+        def get_authorized_dag_ids(self, *, user, method="GET", session=None):
+            return set(_ALL_DAG_IDS)  # the leak: every row, no agent call
+
+        def get_authorized_connections(self, *, user, method="GET", session=None):
+            return set(_ALL_CONN_IDS)
+
+        def get_authorized_pools(self, *, user, method="GET", session=None):
+            return set(_ALL_POOL_NAMES)
+
+        def get_authorized_variables(self, *, user, method="GET", session=None):
+            return set(_ALL_VAR_KEYS)
 
     airflow_mod = ensure("airflow")
     if not getattr(airflow_mod, "__version__", None):
@@ -196,6 +286,54 @@ def test_every_resource_type_is_answered_by_ranger():
         "is_authorized_custom_view",
     ):
         assert getattr(RangerAuthManager, name) is not getattr(FabAuthManager, name), name
+
+
+AUTHZ_PREFIXES = ("is_authorized_", "batch_is_authorized_", "filter_authorized_", "get_authorized_")
+
+# Methods FabAuthManager owns that we deliberately do NOT override. Adding a
+# name here is a decision to let FAB roles govern it with no Ranger audit
+# record -- it is not a way to silence the test.
+#
+# Methods only BaseAuthManager owns are out of scope: Base either delegates to
+# a singular is_authorized_* we override (batch_*, filter_*), or refuses
+# outright -- is_authorized_team raises NotImplementedError, so multi-team
+# fails loudly rather than silently allowing.
+DELIBERATELY_FAB = {
+    # Routed through requires_access_dag, so is_authorized_dag already answers.
+    "is_authorized_backfill",
+    # Navigation only; every endpoint a menu item links to is itself governed.
+    "filter_authorized_menu_items",
+}
+
+
+def test_no_authorization_decision_is_left_to_fab():
+    """Every authorization method FAB implements itself must be overridden here.
+
+    Authorization is ours; only authentication is inherited. A method FAB owns
+    and we do not is decided by FAB roles and leaves no Ranger audit record --
+    which is how the Dag list came to return all 998 rows to a user granted
+    400. Methods FAB does NOT own are fine to inherit: BaseAuthManager's
+    versions delegate down to the singular is_authorized_* that we override.
+
+    When a future Airflow release adds an authorization method and FAB
+    implements it, this test fails instead of the plugin silently widening
+    access.
+    """
+    fab_owned = {
+        name
+        for name, value in vars(FabAuthManager).items()
+        if name.startswith(AUTHZ_PREFIXES) and callable(value)
+    }
+    assert fab_owned, "reflection found nothing -- the stub no longer mirrors FabAuthManager"
+
+    unhandled = fab_owned - set(vars(RangerAuthManager)) - DELIBERATELY_FAB
+    assert not unhandled, (
+        f"FAB decides these and Ranger does not: {sorted(unhandled)}. "
+        f"Override them, or add to DELIBERATELY_FAB with a reason."
+    )
+
+    stale = DELIBERATELY_FAB - fab_owned
+    assert not stale, f"DELIBERATELY_FAB names methods FabAuthManager no longer owns: {sorted(stale)}"
 
 
 def _recording_manager(captured, allowed=True):
@@ -276,6 +414,54 @@ def test_non_dag_resources_omit_the_key_when_no_details_given():
         assert check.resource_type == resource_type, method_name
         assert check.key is None, method_name
         assert "key" not in check.to_payload(), method_name
+
+
+class _FilteringClient:
+    """Permits only the keys it was told to, and records every call."""
+
+    def __init__(self, permitted):
+        self.permitted = set(permitted)
+        self.calls = []
+
+    def filter_keys(self, user, context, resource_type, method, keys, access_entity=None):
+        self.calls.append({"user": user, "resource_type": resource_type, "method": method, "keys": set(keys)})
+        return frozenset(self.permitted & set(keys))
+
+
+def test_list_filtering_asks_ranger_instead_of_fab():
+    """The whole point of the ticket: FAB's get_authorized_* returns every row."""
+    cases = [
+        ("get_authorized_dag_ids", {"etl_0001", "etl_0002"}, "dag", _ALL_DAG_IDS),
+        ("get_authorized_connections", {"prod_db"}, "connection", _ALL_CONN_IDS),
+        ("get_authorized_pools", {"gpu_pool"}, "pool", _ALL_POOL_NAMES),
+        ("get_authorized_variables", {"region"}, "variable", _ALL_VAR_KEYS),
+    ]
+    for method_name, permitted, resource_type, candidates in cases:
+        client = _FilteringClient(permitted)
+        manager = RangerAuthManager(client=client)
+
+        # FAB would have returned the whole candidate set.
+        assert getattr(FabAuthManager, method_name)(manager, user=_User()) == candidates, method_name
+
+        got = getattr(manager, method_name)(user=_User())
+        assert got == permitted, method_name
+        assert len(client.calls) == 1, f"{method_name}: expected ONE filter call, got {len(client.calls)}"
+        assert client.calls[0]["resource_type"] == resource_type, method_name
+        assert client.calls[0]["keys"] == candidates, method_name
+
+
+def test_list_filtering_fails_closed_to_an_empty_page():
+    """Returning the candidates on failure would show every row to everyone."""
+    client = MagicMock()
+    client.filter_keys.side_effect = RuntimeError("agent down")
+    manager = RangerAuthManager(client=client)
+    assert manager.get_authorized_dag_ids(user=_User()) == set()
+    assert manager.get_authorized_connections(user=_User()) == set()
+    assert manager.get_authorized_pools(user=_User()) == set()
+    assert manager.get_authorized_variables(user=_User()) == set()
+
+    uninitialised = RangerAuthManager()
+    assert uninitialised.get_authorized_dag_ids(user=_User()) == set()
 
 
 def test_every_resource_type_fails_closed_before_init():
