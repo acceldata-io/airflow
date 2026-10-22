@@ -34,6 +34,7 @@ def _ensure_airflow_stubs() -> None:
             DagAccessEntity,
             DagDetails,
         )
+
         return
     except ImportError:
         pass
@@ -66,9 +67,55 @@ def _ensure_airflow_stubs() -> None:
         id: str | None = None
         team_name: str | None = None
 
+    # Each details class names its key differently; that mapping is exactly
+    # what the auth manager has to get right.
+    @dataclass
+    class ConnectionDetails:
+        conn_id: str | None = None
+        team_name: str | None = None
+
+    @dataclass
+    class VariableDetails:
+        key: str | None = None
+        team_name: str | None = None
+
+    @dataclass
+    class PoolDetails:
+        name: str | None = None
+        team_name: str | None = None
+
+    @dataclass
+    class AssetDetails:
+        id: str | None = None
+
+    @dataclass
+    class AssetAliasDetails:
+        id: str | None = None
+
+    @dataclass
+    class ConfigurationDetails:
+        section: str | None = None
+
+    class AccessView(Enum):
+        CLUSTER_ACTIVITY = "CLUSTER_ACTIVITY"
+        DOCS = "DOCS"
+        IMPORT_ERRORS = "IMPORT_ERRORS"
+        JOBS = "JOBS"
+        PLUGINS = "PLUGINS"
+        PROVIDERS = "PROVIDERS"
+        TRIGGERS = "TRIGGERS"
+        WEBSITE = "WEBSITE"
+
     details = ensure("airflow.api_fastapi.auth.managers.models.resource_details")
     details.DagAccessEntity = DagAccessEntity
     details.DagDetails = DagDetails
+    details.ConnectionDetails = ConnectionDetails
+    details.VariableDetails = VariableDetails
+    details.PoolDetails = PoolDetails
+    details.AssetDetails = AssetDetails
+    details.AssetAliasDetails = AssetAliasDetails
+    details.ConfigurationDetails = ConfigurationDetails
+    details.AccessView = AccessView
 
     class FabAuthManager:
         def __init__(self):
@@ -92,6 +139,18 @@ def _ensure_airflow_stubs() -> None:
         def is_authorized_dag(self, **kwargs):
             return False
 
+        def is_authorized_asset(self, **kwargs):
+            return False
+
+        def is_authorized_asset_alias(self, **kwargs):
+            return False
+
+        def is_authorized_view(self, **kwargs):
+            return False
+
+        def is_authorized_custom_view(self, **kwargs):
+            return False
+
     airflow_mod = ensure("airflow")
     if not getattr(airflow_mod, "__version__", None):
         airflow_mod.__version__ = "3.2.2"
@@ -102,7 +161,17 @@ def _ensure_airflow_stubs() -> None:
 
 _ensure_airflow_stubs()
 
-from airflow.api_fastapi.auth.managers.models.resource_details import DagAccessEntity, DagDetails
+from airflow.api_fastapi.auth.managers.models.resource_details import (
+    AccessView,
+    AssetAliasDetails,
+    AssetDetails,
+    ConfigurationDetails,
+    ConnectionDetails,
+    DagAccessEntity,
+    DagDetails,
+    PoolDetails,
+    VariableDetails,
+)
 from airflow.providers.fab.auth_manager.fab_auth_manager import FabAuthManager
 
 from odp_airflow_ranger_auth_manager.ranger_auth_manager import RangerAuthManager
@@ -113,12 +182,122 @@ class _User:
         return "alice@CORP.EXAMPLE"
 
 
-def test_does_not_override_non_dag_methods():
-    assert RangerAuthManager.is_authorized_connection is FabAuthManager.is_authorized_connection
-    assert RangerAuthManager.is_authorized_variable is FabAuthManager.is_authorized_variable
-    assert RangerAuthManager.is_authorized_pool is FabAuthManager.is_authorized_pool
-    assert RangerAuthManager.is_authorized_configuration is FabAuthManager.is_authorized_configuration
-    assert RangerAuthManager.is_authorized_dag is not FabAuthManager.is_authorized_dag
+def test_every_resource_type_is_answered_by_ranger():
+    """Anything still inherited from FAB is decided by FAB roles and is not audited."""
+    for name in (
+        "is_authorized_dag",
+        "is_authorized_connection",
+        "is_authorized_variable",
+        "is_authorized_pool",
+        "is_authorized_asset",
+        "is_authorized_asset_alias",
+        "is_authorized_configuration",
+        "is_authorized_view",
+        "is_authorized_custom_view",
+    ):
+        assert getattr(RangerAuthManager, name) is not getattr(FabAuthManager, name), name
+
+
+def _recording_manager(captured, allowed=True):
+    class RecordingClient:
+        def authorize(self, user, context, checks):
+            captured["user"] = user
+            captured["checks"] = checks
+            return [Decision(id=checks[0].id, allowed=allowed, policy_id=1)]
+
+    return RangerAuthManager(client=RecordingClient())
+
+
+def test_each_resource_type_sends_its_own_key():
+    """Each details class names its key differently.
+
+    A copy-paste slip here would send the wrong field, or None, and silently
+    widen the policy match.
+    """
+    cases = [
+        (
+            "is_authorized_connection",
+            {"details": ConnectionDetails(conn_id="prod_db")},
+            "connection",
+            "prod_db",
+        ),
+        ("is_authorized_variable", {"details": VariableDetails(key="api_token")}, "variable", "api_token"),
+        ("is_authorized_pool", {"details": PoolDetails(name="default_pool")}, "pool", "default_pool"),
+        ("is_authorized_asset", {"details": AssetDetails(id="s3://bucket/x")}, "asset", "s3://bucket/x"),
+        ("is_authorized_asset_alias", {"details": AssetAliasDetails(id="alias_1")}, "asset_alias", "alias_1"),
+        ("is_authorized_configuration", {"details": ConfigurationDetails(section="core")}, "config", "core"),
+    ]
+    for method_name, kwargs, resource_type, expected_key in cases:
+        captured = {}
+        manager = _recording_manager(captured)
+        assert getattr(manager, method_name)(method="GET", user=_User(), **kwargs) is True
+        check = captured["checks"][0]
+        assert check.resource_type == resource_type, method_name
+        assert check.key == expected_key, method_name
+        assert check.method == "GET", method_name
+        assert check.access_entity is None, method_name
+
+
+def test_view_sends_access_view_as_the_key_not_an_access_entity():
+    # AccessMapper rejects an access_entity on `view`, so IMPORT_ERRORS has to
+    # arrive as the resource key. This is the /api/v2/importErrors path.
+    captured = {}
+    manager = _recording_manager(captured)
+    assert manager.is_authorized_view(access_view=AccessView.IMPORT_ERRORS, user=_User()) is True
+    check = captured["checks"][0]
+    assert check.resource_type == "view"
+    assert check.key == "IMPORT_ERRORS"
+    assert check.access_entity is None
+    assert check.method == "GET"
+
+
+def test_custom_view_sends_resource_name_as_the_key():
+    captured = {}
+    manager = _recording_manager(captured)
+    assert manager.is_authorized_custom_view(method="GET", resource_name="MyPluginView", user=_User()) is True
+    check = captured["checks"][0]
+    assert check.resource_type == "custom_view"
+    assert check.key == "MyPluginView"
+
+
+def test_non_dag_resources_omit_the_key_when_no_details_given():
+    for method_name, resource_type in (
+        ("is_authorized_connection", "connection"),
+        ("is_authorized_variable", "variable"),
+        ("is_authorized_pool", "pool"),
+        ("is_authorized_asset", "asset"),
+        ("is_authorized_asset_alias", "asset_alias"),
+        ("is_authorized_configuration", "config"),
+    ):
+        captured = {}
+        manager = _recording_manager(captured)
+        assert getattr(manager, method_name)(method="GET", user=_User()) is True
+        check = captured["checks"][0]
+        assert check.resource_type == resource_type, method_name
+        assert check.key is None, method_name
+        assert "key" not in check.to_payload(), method_name
+
+
+def test_every_resource_type_fails_closed_before_init():
+    manager = RangerAuthManager()
+    assert manager.is_authorized_connection(method="GET", user=_User()) is False
+    assert manager.is_authorized_variable(method="GET", user=_User()) is False
+    assert manager.is_authorized_pool(method="GET", user=_User()) is False
+    assert manager.is_authorized_asset(method="GET", user=_User()) is False
+    assert manager.is_authorized_asset_alias(method="GET", user=_User()) is False
+    assert manager.is_authorized_configuration(method="GET", user=_User()) is False
+    assert manager.is_authorized_view(access_view=AccessView.JOBS, user=_User()) is False
+    assert manager.is_authorized_custom_view(method="GET", resource_name="X", user=_User()) is False
+
+
+def test_every_resource_type_fails_closed_when_client_raises():
+    client = MagicMock()
+    client.authorize.side_effect = RuntimeError("boom")
+    manager = RangerAuthManager(client=client)
+    assert manager.is_authorized_connection(method="GET", user=_User()) is False
+    assert manager.is_authorized_variable(method="DELETE", user=_User()) is False
+    assert manager.is_authorized_pool(method="POST", user=_User()) is False
+    assert manager.is_authorized_view(access_view=AccessView.JOBS, user=_User()) is False
 
 
 def test_is_authorized_dag_allow():
