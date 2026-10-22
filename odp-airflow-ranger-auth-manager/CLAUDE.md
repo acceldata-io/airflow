@@ -23,24 +23,33 @@ database and containers. This package stubs Airflow via `sys.modules` injection
 in `tests/test_ranger_auth_manager.py` and needs neither:
 
 ```bash
-/tmp/rangervenv/bin/python -m pytest tests/ -q     # ~15s, 46 tests
+~/.venvs/ranger-airflow/bin/python -m pytest tests/ -q     # ~16s, 52 tests
 ```
 
-If that venv is gone: `python3 -m venv /tmp/rangervenv && /tmp/rangervenv/bin/pip
-install pytest urllib3 packaging ruff`.
+If that venv is gone: `python3 -m venv ~/.venvs/ranger-airflow &&
+~/.venvs/ranger-airflow/bin/pip install pytest urllib3 packaging ruff`.
+(It used to live in `/tmp`, which does not survive a reboot — don't put it back
+there.)
 
 **2. `uv run ruff` does not work here** — uv resolves the workspace and then
-cannot find ruff. Use `/tmp/rangervenv/bin/ruff` instead. The root's *rule*
-still applies: format and check every Python file immediately after editing it.
+cannot find ruff. Use the venv's ruff instead. The root's *rule* still applies:
+format and check every Python file immediately after editing it.
+
+**Run ruff from the airflow repo root, not from this directory.** The root
+`pyproject.toml` holds the `[tool.ruff]` config (`line-length = 110`); this
+package has none, so invoking ruff from here silently applies ruff's 88-column
+default and reformats files the repo considers fine.
 
 ```bash
-/tmp/rangervenv/bin/ruff format <file>
-/tmp/rangervenv/bin/ruff check --output-format=concise <file>
+cd ~/work_files/ranger-airflow-plugin/airflow/airflow
+~/.venvs/ranger-airflow/bin/ruff format odp-airflow-ranger-auth-manager/src <...>
+~/.venvs/ranger-airflow/bin/ruff check --output-format=concise <file>
 ```
 
-This package has no `[tool.ruff]` config, so bare ruff applies a stricter
-default than the repo enforces. Fix findings in **lines you touched**; several
-pre-existing ones (`D101` missing docstrings, `TC001`, `D213`) are not yours.
+`ruff check` still reports rules the repo does not enforce. Fix findings in
+**lines you touched**; pre-existing ones (`S101` asserts in tests, `D101`,
+`TC001`, `D213`, `E402`/`RUF100` around the `sys.modules` stub block) are not
+yours. Compare against an untouched file before assuming a finding is new.
 
 Everything else from the root applies, notably: write **Dag** in title case in
 prose, and never add `Co-Authored-By` naming an agent.
