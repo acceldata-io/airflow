@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
+from functools import wraps
 from enum import Enum
 from types import ModuleType
 from unittest.mock import MagicMock
@@ -25,6 +26,13 @@ from odp_airflow_ranger_auth_manager.request_context import (
     reset_request_context,
     set_request_context,
 )
+
+
+class _FakeSession:
+    """Stands in for a SQLAlchemy session. Base only ever calls execute()."""
+
+    def execute(self, *args, **kwargs):
+        return []
 
 
 # The candidate rows a list endpoint would load before filtering.
@@ -139,15 +147,27 @@ def _ensure_airflow_stubs() -> None:
         # Base loads the candidate set, then defers to filter_authorized_*.
         # That delegation is the behaviour RangerAuthManager relies on.
         def get_authorized_dag_ids(self, *, user, method="GET", session=None):
+            # The real Base calls session.execute() here; a None session
+            # means the caller forgot @provide_session.
+            session.execute()
             return self.filter_authorized_dag_ids(dag_ids=_ALL_DAG_IDS, user=user, method=method)
 
         def get_authorized_connections(self, *, user, method="GET", session=None):
+            # The real Base calls session.execute() here; a None session
+            # means the caller forgot @provide_session.
+            session.execute()
             return self.filter_authorized_connections(conn_ids=_ALL_CONN_IDS, user=user, method=method)
 
         def get_authorized_pools(self, *, user, method="GET", session=None):
+            # The real Base calls session.execute() here; a None session
+            # means the caller forgot @provide_session.
+            session.execute()
             return self.filter_authorized_pools(pool_names=_ALL_POOL_NAMES, user=user, method=method)
 
         def get_authorized_variables(self, *, user, method="GET", session=None):
+            # The real Base calls session.execute() here; a None session
+            # means the caller forgot @provide_session.
+            session.execute()
             return self.filter_authorized_variables(variable_keys=_ALL_VAR_KEYS, user=user, method=method)
 
         def get_authorized_teams(self, *, user, method="GET", session=None):
@@ -186,8 +206,24 @@ def _ensure_airflow_stubs() -> None:
     base_mod = ensure("airflow.api_fastapi.auth.managers.base_auth_manager")
     base_mod.BaseAuthManager = BaseAuthManager
 
+    # NEW_SESSION is really None -- a sentinel, not a session. @provide_session
+    # supplies a real one ONLY when `session` is absent from kwargs; passing it
+    # explicitly (even as the sentinel) makes the decorator step aside and hand
+    # None straight through, which blows up on the first session.execute().
+    # Mirroring that exactly is what makes the stub able to catch a missing
+    # decorator.
+    def provide_session(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if "session" not in kwargs:
+                kwargs["session"] = _FakeSession()
+            return func(*args, **kwargs)
+
+        return wrapper
+
     session_mod = ensure("airflow.utils.session")
     session_mod.NEW_SESSION = None
+    session_mod.provide_session = provide_session
 
     class FabAuthManager(BaseAuthManager):
         """Mirrors exactly which methods the real FabAuthManager owns.

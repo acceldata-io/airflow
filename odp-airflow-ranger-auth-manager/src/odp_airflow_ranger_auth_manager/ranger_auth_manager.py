@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from airflow.api_fastapi.auth.managers.base_auth_manager import BaseAuthManager
 from airflow.providers.fab.auth_manager.fab_auth_manager import FabAuthManager
-from airflow.utils.session import NEW_SESSION
+from airflow.utils.session import NEW_SESSION, provide_session
 
 from odp_airflow_ranger_auth_manager.client import AuthorizeCheck, RangerAuthzClient
 from odp_airflow_ranger_auth_manager.config import RangerClientConfig
@@ -148,6 +148,7 @@ class RangerAuthManager(FabAuthManager):
     # overridden below to answer from Ranger in a single call.
     # ------------------------------------------------------------------
 
+    @provide_session
     def get_authorized_dag_ids(
         self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
     ) -> set[str]:
@@ -163,6 +164,7 @@ class RangerAuthManager(FabAuthManager):
     ) -> set[str]:
         return self._filter(RESOURCE_TYPE_DAG, _method_str(method), user, dag_ids)
 
+    @provide_session
     def get_authorized_connections(
         self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
     ) -> set[str]:
@@ -178,6 +180,7 @@ class RangerAuthManager(FabAuthManager):
     ) -> set[str]:
         return self._filter(RESOURCE_TYPE_CONNECTION, _method_str(method), user, conn_ids)
 
+    @provide_session
     def get_authorized_pools(
         self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
     ) -> set[str]:
@@ -193,6 +196,7 @@ class RangerAuthManager(FabAuthManager):
     ) -> set[str]:
         return self._filter(RESOURCE_TYPE_POOL, _method_str(method), user, pool_names)
 
+    @provide_session
     def get_authorized_variables(
         self, *, user: User, method: ResourceMethod = "GET", session: Session = NEW_SESSION
     ) -> set[str]:
