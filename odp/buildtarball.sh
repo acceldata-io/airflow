@@ -28,6 +28,9 @@ REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements.txt"
 LOCAL_CONSTRAINTS="${SCRIPT_DIR}/constraints-local.txt"
 TARBALL_NAME="airflow_environment_${ODP_AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
 
+# Ranger authorization manager, built from source in this repo.
+RANGER_AUTHZ_DIR="${SCRIPT_DIR}/../odp-airflow-ranger-auth-manager"
+
 echo "============================================"
 echo "Airflow Tarball Builder"
 echo "Airflow Version: ${AIRFLOW_VERSION}"
@@ -128,6 +131,23 @@ echo "Reinstalling google-re2 with system re2 library..."
 pip uninstall -y google-re2 || true
 pip install google-re2 --force-reinstall --no-cache-dir
 
+# Ranger authorization manager. Ships in every environment; inert until
+# [core] auth_manager names it. --no-deps is required -- the package
+# declares apache-airflow, which pip would re-resolve inside the pinned env.
+echo "Installing the Ranger authorization manager..."
+if [ ! -f "${RANGER_AUTHZ_DIR}/pyproject.toml" ]; then
+    echo "ERROR: Ranger auth manager sources not found at ${RANGER_AUTHZ_DIR}"
+    exit 1
+fi
+pip install --no-deps "${RANGER_AUTHZ_DIR}"
+
+RANGER_AUTHZ_VERSION=$(pip show odp-airflow-ranger-auth-manager 2>/dev/null | awk '/^Version:/{print $2}')
+if [ -z "${RANGER_AUTHZ_VERSION}" ]; then
+    echo "ERROR: Ranger auth manager did not install"
+    exit 1
+fi
+echo "Ranger authorization manager ${RANGER_AUTHZ_VERSION} installed"
+
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="airflow/BUILD_INFO"
 echo "Generating BUILD_INFO manifest..."
@@ -150,6 +170,7 @@ ODP_AIRFLOW_VERSION=${ODP_AIRFLOW_VERSION}
 BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 BUILD_OS=${BUILD_OS}
 PYTHON_VERSION=${PYTHON_FULL_VERSION}
+RANGER_AUTHZ_VERSION=${RANGER_AUTHZ_VERSION}
 EOF
 
 echo "BUILD_INFO contents:"

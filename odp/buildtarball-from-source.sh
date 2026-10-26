@@ -97,6 +97,7 @@ echo "CFLAGS set to: ${CFLAGS}"
 
 # Create virtual environment
 VENV_DIR="${SCRIPT_DIR}/airflow"
+RANGER_AUTHZ_DIR="${SCRIPT_DIR}/../odp-airflow-ranger-auth-manager"
 echo "Creating virtual environment with ${PY} at ${VENV_DIR}..."
 rm -rf "${VENV_DIR}"
 $PY -m venv "${VENV_DIR}"
@@ -173,6 +174,23 @@ echo ""
 echo "Installing additional dependencies from requirements-source.txt..."
 uv pip install -r "${REQUIREMENTS_FILE}" --constraint "${CONSTRAINTS_FILE}"
 
+# Ranger authorization manager. --no-deps: see buildtarball.sh.
+# --no-build-isolation reuses the setuptools already installed above.
+echo ""
+echo "Installing the Ranger authorization manager..."
+if [ ! -f "${RANGER_AUTHZ_DIR}/pyproject.toml" ]; then
+    echo "ERROR: Ranger auth manager sources not found at ${RANGER_AUTHZ_DIR}"
+    exit 1
+fi
+uv pip install --no-deps --no-build-isolation "${RANGER_AUTHZ_DIR}"
+
+RANGER_AUTHZ_VERSION=$(uv pip show odp-airflow-ranger-auth-manager 2>/dev/null | awk '/^Version:/{print $2}')
+if [ -z "${RANGER_AUTHZ_VERSION}" ]; then
+    echo "ERROR: Ranger auth manager did not install"
+    exit 1
+fi
+echo "Ranger authorization manager ${RANGER_AUTHZ_VERSION} installed"
+
 # Generate BUILD_INFO manifest inside venv (so it's included in tarball)
 BUILD_INFO_FILE="${VENV_DIR}/BUILD_INFO"
 echo ""
@@ -194,6 +212,7 @@ AIRFLOW_VERSION=${AIRFLOW_VERSION}
 ODP_VERSION=${ODP_VERSION}
 ODP_AIRFLOW_VERSION=${ODP_AIRFLOW_VERSION}
 BUILD_TYPE=source
+RANGER_AUTHZ_VERSION=${RANGER_AUTHZ_VERSION}
 BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 BUILD_OS=${BUILD_OS}
 PYTHON_VERSION=${PYTHON_FULL_VERSION}

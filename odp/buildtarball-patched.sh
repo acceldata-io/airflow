@@ -25,6 +25,7 @@ PATCH_FILES_LIST="${SCRIPT_DIR}/patch_files.txt"
 LOCAL_CONSTRAINTS="${SCRIPT_DIR}/constraints-local.txt"
 TARBALL_NAME="airflow_environment_${ODP_AIRFLOW_VERSION_UNDERSCORE}.tar.gz"
 VENV_DIR="${SCRIPT_DIR}/airflow"
+RANGER_AUTHZ_DIR="${SCRIPT_DIR}/../odp-airflow-ranger-auth-manager"
 
 echo "============================================"
 echo "Airflow Tarball Builder (PATCHED)"
@@ -148,6 +149,21 @@ echo "Reinstalling google-re2 with system re2 library..."
 pip uninstall -y google-re2 || true
 pip install google-re2 --force-reinstall --no-cache-dir
 
+# Ranger authorization manager. --no-deps: see buildtarball.sh.
+echo "Installing the Ranger authorization manager..."
+if [ ! -f "${RANGER_AUTHZ_DIR}/pyproject.toml" ]; then
+    echo "ERROR: Ranger auth manager sources not found at ${RANGER_AUTHZ_DIR}"
+    exit 1
+fi
+pip install --no-deps "${RANGER_AUTHZ_DIR}"
+
+RANGER_AUTHZ_VERSION=$(pip show odp-airflow-ranger-auth-manager 2>/dev/null | awk '/^Version:/{print $2}')
+if [ -z "${RANGER_AUTHZ_VERSION}" ]; then
+    echo "ERROR: Ranger auth manager did not install"
+    exit 1
+fi
+echo "Ranger authorization manager ${RANGER_AUTHZ_VERSION} installed"
+
 # --- Step 4: Overlay patched files ---
 echo ""
 echo "[Step 4] Overlaying Patched Files"
@@ -198,6 +214,7 @@ AIRFLOW_VERSION=${AIRFLOW_VERSION}
 ODP_VERSION=${ODP_VERSION}
 ODP_AIRFLOW_VERSION=${ODP_AIRFLOW_VERSION}
 BUILD_TYPE=patched
+RANGER_AUTHZ_VERSION=${RANGER_AUTHZ_VERSION}
 BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 BUILD_OS=${BUILD_OS}
 PYTHON_VERSION=${PYTHON_FULL_VERSION}
