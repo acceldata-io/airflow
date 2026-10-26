@@ -1,5 +1,5 @@
 # Additional dependencies for source-built Airflow tarball
-# Versions are controlled by constraints-3.14.txt (Apache Airflow 3.2.2; passed via --constraint flag)
+# Versions are controlled by constraints-<python version>.txt (Apache Airflow 3.2.2; passed via --constraint flag)
 # Only pin versions here for packages NOT in the constraints file
 
 PyMySQL
