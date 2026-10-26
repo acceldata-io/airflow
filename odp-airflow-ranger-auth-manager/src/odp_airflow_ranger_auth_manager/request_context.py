@@ -160,14 +160,20 @@ def current_request_context() -> RequestContext:
 class RequestContextMiddleware:
     """ASGI middleware that records client IP and path for the agent audit record."""
 
-    def __init__(self, app):
+    def __init__(self, app, trusted_proxies: Iterable[str] | None = None):
         self.app = app
+        # Resolved once. The trusted-proxy list cannot change while the
+        # process runs, and reading it per request put an Airflow config
+        # lookup on the hot path of every api-server request.
+        self._trusted_proxies = (
+            tuple(trusted_proxies) if trusted_proxies is not None else _load_trusted_proxies()
+        )
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") != "http":
             await self.app(scope, receive, send)
             return
-        token = set_request_context(context_from_asgi_scope(scope))
+        token = set_request_context(context_from_asgi_scope(scope, self._trusted_proxies))
         try:
             await self.app(scope, receive, send)
         finally:

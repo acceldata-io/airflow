@@ -64,3 +64,64 @@ def test_fallback_when_unbound():
     ctx = current_request_context()
     assert ctx.client_ip == "0.0.0.0"
     assert ctx.request_uri == "/"
+
+
+def test_middleware_resolves_trusted_proxies_once_not_per_request():
+    """The list cannot change while the process runs, so reading it per
+    request put an Airflow config lookup on the hot path of every
+    api-server request."""
+    import asyncio
+
+    import odp_airflow_ranger_auth_manager.request_context as rc
+
+    calls = {"n": 0}
+    original = rc._load_trusted_proxies
+
+    def counting():
+        calls["n"] += 1
+        return ("10.0.0.1",)
+
+    rc._load_trusted_proxies = counting
+    try:
+        mw = rc.RequestContextMiddleware(_noop_app)
+        assert calls["n"] == 1, "constructing the middleware should resolve the list once"
+        for _ in range(5):
+            asyncio.run(
+                mw(
+                    {"type": "http", "path": "/api/v2/dags", "headers": [], "client": ("10.0.0.1", 1)},
+                    None,
+                    None,
+                )
+            )
+        assert calls["n"] == 1, f"expected 1 config read for 5 requests, got {calls['n']}"
+    finally:
+        rc._load_trusted_proxies = original
+
+
+def test_middleware_still_honours_trusted_proxies_after_caching():
+    import asyncio
+
+    import odp_airflow_ranger_auth_manager.request_context as rc
+
+    seen = {}
+
+    async def capture(scope, receive, send):
+        seen["ctx"] = rc.current_request_context()
+
+    scope = {
+        "type": "http",
+        "path": "/api/v2/dags",
+        "headers": [(b"x-forwarded-for", b"203.0.113.9")],
+        "client": ("10.0.0.1", 1),
+    }
+    # peer IS a trusted proxy -> believe the forwarded header
+    asyncio.run(rc.RequestContextMiddleware(capture, trusted_proxies=["10.0.0.1"])(scope, None, None))
+    assert seen["ctx"].client_ip == "203.0.113.9"
+
+    # peer is NOT trusted -> record the peer, never the claim
+    asyncio.run(rc.RequestContextMiddleware(capture, trusted_proxies=["192.0.2.1"])(scope, None, None))
+    assert seen["ctx"].client_ip == "10.0.0.1"
+
+
+async def _noop_app(scope, receive, send):
+    return None
