@@ -1,11 +1,31 @@
 #!/usr/bin/env bash
-# Install Python 3.14 on various Linux distributions
+# Install Python on various Linux distributions
 # Run this script as root
+# Usage: ./install_python.sh [3.11|3.12]   (default: 3.12)
 # Supported OS: RHEL 8/9, Ubuntu 20.04/22.04
 # This script is idempotent - safe to run multiple times
 set -euo pipefail
 
-PYTHON_MAJOR_MINOR="3.14"
+# The ODP 3.3.6 line only ships python3.11 and python3.12 interpreters, so the
+# tarball must be built against one of those.
+SUPPORTED_PYTHON_VERSIONS=("3.11" "3.12")
+PYTHON_MAJOR_MINOR="${1:-${ODP_PY_VERSION:-3.12}}"
+
+version_supported=false
+for candidate in "${SUPPORTED_PYTHON_VERSIONS[@]}"; do
+    if [ "${candidate}" = "${PYTHON_MAJOR_MINOR}" ]; then
+        version_supported=true
+        break
+    fi
+done
+
+if [ "${version_supported}" != true ]; then
+    echo "ERROR: Unsupported Python version '${PYTHON_MAJOR_MINOR}'."
+    echo "       Supported on the ODP 3.3.6 line: ${SUPPORTED_PYTHON_VERSIONS[*]}"
+    exit 1
+fi
+
+PY="python${PYTHON_MAJOR_MINOR}"
 
 # Detect OS
 detect_os() {
@@ -26,14 +46,14 @@ detect_os() {
     echo "Detected OS: ${OS_ID} ${OS_VERSION_ID}"
 }
 
-# Check if Python 3.14 is already installed and working
-check_python314() {
-    if command -v python${PYTHON_MAJOR_MINOR} &>/dev/null; then
-        INSTALLED_PY_VERSION=$(python${PYTHON_MAJOR_MINOR} --version 2>&1 | awk '{print $2}')
+# Check if the requested Python is already installed and working
+check_python() {
+    if command -v "${PY}" &>/dev/null; then
+        INSTALLED_PY_VERSION=$(${PY} --version 2>&1 | awk '{print $2}')
         echo "Found Python ${INSTALLED_PY_VERSION}"
 
         # Check if venv module works
-        if python${PYTHON_MAJOR_MINOR} -m venv --help &>/dev/null; then
+        if ${PY} -m venv --help &>/dev/null; then
             echo "Python ${PYTHON_MAJOR_MINOR} already installed with working venv module."
             return 0
         else
@@ -47,21 +67,20 @@ check_python314() {
 # ============================================================
 # RHEL 8/9 Installation (via yum/dnf)
 # ============================================================
-install_python314_rhel() {
-    echo "Installing Python 3.14 on RHEL ${OS_VERSION_MAJOR} (via package manager)..."
+install_python_rhel() {
+    echo "Installing Python ${PYTHON_MAJOR_MINOR} on RHEL ${OS_VERSION_MAJOR} (via package manager)..."
 
-    # Install Python 3.14
-    echo "Installing Python 3.14..."
-    yum install -y python3.14 python3.14-devel python3.14-pip || dnf install -y python3.14 python3.14-devel python3.14-pip
+    yum install -y "${PY}" "${PY}-devel" "${PY}-pip" ||
+        dnf install -y "${PY}" "${PY}-devel" "${PY}-pip"
 
-    echo "Python 3.14 installation complete via package manager."
+    echo "Python ${PYTHON_MAJOR_MINOR} installation complete via package manager."
 }
 
 # ============================================================
 # Ubuntu 20.04/22.04 Installation (via deadsnakes PPA)
 # ============================================================
-install_python314_ubuntu() {
-    echo "Installing Python 3.14 on Ubuntu ${OS_VERSION_ID} (via deadsnakes PPA)..."
+install_python_ubuntu() {
+    echo "Installing Python ${PYTHON_MAJOR_MINOR} on Ubuntu ${OS_VERSION_ID} (via deadsnakes PPA)..."
 
     # Update apt
     echo "Updating package lists..."
@@ -77,20 +96,20 @@ install_python314_ubuntu() {
     # Update after adding PPA
     apt update -y
 
-    # Install Python 3.14 and related packages
-    echo "Installing Python 3.14..."
-    apt install -y python3.14 python3.14-venv python3.14-dev
+    # Install Python and related packages
+    echo "Installing Python ${PYTHON_MAJOR_MINOR}..."
+    apt install -y "${PY}" "${PY}-venv" "${PY}-dev"
 
     # Install distutils (needed for some packages)
-    apt install -y python3.14-distutils || true
+    apt install -y "${PY}-distutils" || true
 
-    # Ensure pip is available for Python 3.14
-    if ! python3.14 -m pip --version &>/dev/null; then
-        echo "Installing pip for Python 3.14..."
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.14
+    # Ensure pip is available
+    if ! ${PY} -m pip --version &>/dev/null; then
+        echo "Installing pip for Python ${PYTHON_MAJOR_MINOR}..."
+        curl -sS https://bootstrap.pypa.io/get-pip.py | ${PY}
     fi
 
-    echo "Python 3.14 installation complete via deadsnakes PPA."
+    echo "Python ${PYTHON_MAJOR_MINOR} installation complete via deadsnakes PPA."
 }
 
 # ============================================================
@@ -103,35 +122,35 @@ echo "============================================"
 
 detect_os
 
-# Check if Python 3.14 is already properly installed
-if check_python314; then
-    echo "Python 3.14 is already installed and working. Skipping installation."
+# Check if the requested Python is already properly installed
+if check_python; then
+    echo "Python ${PYTHON_MAJOR_MINOR} is already installed and working. Skipping installation."
 else
     # Install based on detected OS
     case "${OS_ID}" in
         rhel|centos|rocky|almalinux)
             if [ "${OS_VERSION_MAJOR}" = "8" ] || [ "${OS_VERSION_MAJOR}" = "9" ]; then
-                install_python314_rhel
+                install_python_rhel
             else
-                echo "ERROR: ${OS_ID} ${OS_VERSION_MAJOR} is not supported for Python 3.14"
+                echo "ERROR: ${OS_ID} ${OS_VERSION_MAJOR} is not supported for Python ${PYTHON_MAJOR_MINOR}"
                 echo "Use RHEL/CentOS 8 or 9, or Ubuntu 20/22"
                 exit 1
             fi
             ;;
         fedora)
-            install_python314_rhel
+            install_python_rhel
             ;;
         ubuntu)
             if [[ "${OS_VERSION_MAJOR}" =~ ^(20|22|24)$ ]]; then
-                install_python314_ubuntu
+                install_python_ubuntu
             else
                 echo "WARNING: Ubuntu ${OS_VERSION_ID} may not be fully supported."
-                install_python314_ubuntu
+                install_python_ubuntu
             fi
             ;;
         debian)
             echo "Detected Debian - using Ubuntu installation method"
-            install_python314_ubuntu
+            install_python_ubuntu
             ;;
         *)
             echo "ERROR: Unsupported OS: ${OS_ID}"
@@ -150,20 +169,20 @@ echo "Installation Verification"
 echo "============================================"
 
 echo "Python version:"
-python${PYTHON_MAJOR_MINOR} --version
+${PY} --version
 
 echo "Python location:"
-which python${PYTHON_MAJOR_MINOR}
+which "${PY}"
 
 # Verify venv works
 echo "Checking venv module:"
-python${PYTHON_MAJOR_MINOR} -m venv --help &>/dev/null && echo "venv module: OK" || echo "WARNING: venv module not working"
+${PY} -m venv --help &>/dev/null && echo "venv module: OK" || echo "WARNING: venv module not working"
 
 # Verify pip works
 echo "Checking pip:"
-python${PYTHON_MAJOR_MINOR} -m pip --version || echo "WARNING: pip not working"
+${PY} -m pip --version || echo "WARNING: pip not working"
 
 echo ""
 echo "============================================"
-echo "Python 3.14 Installation complete!"
+echo "Python ${PYTHON_MAJOR_MINOR} Installation complete!"
 echo "============================================"
