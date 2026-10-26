@@ -10,8 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AIRFLOW_SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Configuration
-PY=python3.14
-PY_VERSION=3.14
+# Override with ODP_PY_VERSION; install_python.sh rejects anything the ODP
+# 3.3.6 line does not ship an interpreter for.
+PY_VERSION="${ODP_PY_VERSION:-3.12}"
+PY="python${PY_VERSION}"
 AIRFLOW_VERSION=3.2.2
 
 ODP_VERSION=$(cat "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')
@@ -31,6 +33,7 @@ echo "============================================"
 echo "Airflow Tarball Builder (PATCHED)"
 echo "============================================"
 echo "Airflow Version: ${AIRFLOW_VERSION} (from PyPI)"
+echo "Python Version:  ${PY_VERSION}"
 echo "ODP Version:     ${ODP_VERSION}"
 echo "Combined:        ${ODP_AIRFLOW_VERSION}"
 echo "Source Root:     ${AIRFLOW_SOURCE_ROOT}"
@@ -88,16 +91,16 @@ else
     echo "WARNING: install_prereqs.sh not found, skipping."
 fi
 
-# --- Step 2: Python 3.14 ---
+# --- Step 2: Python ---
 echo ""
-echo "[Step 2] Installing Python 3.14"
+echo "[Step 2] Installing Python ${PY_VERSION}"
 
-PYTHON_SCRIPT="${SCRIPT_DIR}/install_python314.sh"
+PYTHON_SCRIPT="${SCRIPT_DIR}/install_python.sh"
 if [ -f "${PYTHON_SCRIPT}" ]; then
     chmod +x "${PYTHON_SCRIPT}"
-    bash "${PYTHON_SCRIPT}"
+    bash "${PYTHON_SCRIPT}" "${PY_VERSION}"
 else
-    echo "ERROR: install_python314.sh not found"
+    echo "ERROR: install_python.sh not found"
     exit 1
 fi
 
@@ -240,7 +243,7 @@ TARBALL_PATH="${SCRIPT_DIR}/${TARBALL_NAME}"
 ALL_GOOD=true
 
 for f in "${PATCH_FILES[@]+"${PATCH_FILES[@]}"}"; do
-    # In the tarball, paths are relative to venv root: lib/python3.14/site-packages/airflow/...
+    # In the tarball, paths are relative to venv root: lib/python<ver>/site-packages/airflow/...
     tarball_path="lib/python${PY_VERSION}/site-packages/${f}"
     if tar tzf "${TARBALL_PATH}" | grep -q "${tarball_path}"; then
         echo "  OK: ${f}"

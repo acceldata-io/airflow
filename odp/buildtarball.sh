@@ -6,8 +6,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-PY=python3.14
-PY_VERSION=3.14
+# Override with ODP_PY_VERSION; install_python.sh rejects anything the ODP
+# 3.3.6 line does not ship an interpreter for.
+PY_VERSION="${ODP_PY_VERSION:-3.12}"
+PY="python${PY_VERSION}"
 AIRFLOW_VERSION=3.2.2
 
 # Read ODP version from VERSION file
@@ -34,6 +36,7 @@ RANGER_AUTHZ_DIR="${SCRIPT_DIR}/../odp-airflow-ranger-auth-manager"
 echo "============================================"
 echo "Airflow Tarball Builder"
 echo "Airflow Version: ${AIRFLOW_VERSION}"
+echo "Python Version: ${PY_VERSION}"
 echo "ODP Version: ${ODP_VERSION}"
 echo "Combined Version: ${ODP_AIRFLOW_VERSION}"
 echo "Tarball: ${TARBALL_NAME}"
@@ -59,27 +62,27 @@ else
     echo "Skipping prerequisites installation..."
 fi
 
-# Step 2: Install Python 3.14
+# Step 2: Install Python
 echo ""
-echo "[Step 2] Installing Python 3.14"
+echo "[Step 2] Installing Python ${PY_VERSION}"
 
-PYTHON_SCRIPT="${SCRIPT_DIR}/install_python314.sh"
+PYTHON_SCRIPT="${SCRIPT_DIR}/install_python.sh"
 if [ -f "${PYTHON_SCRIPT}" ]; then
-    echo "Running install_python314.sh..."
+    echo "Running install_python.sh..."
     chmod +x "${PYTHON_SCRIPT}"
-    bash "${PYTHON_SCRIPT}"
+    bash "${PYTHON_SCRIPT}" "${PY_VERSION}"
 else
-    echo "ERROR: install_python314.sh not found at ${PYTHON_SCRIPT}"
+    echo "ERROR: install_python.sh not found at ${PYTHON_SCRIPT}"
     exit 1
 fi
 
-# Verify Python 3.14 is available
+# Verify the interpreter is available
 if ! command -v ${PY} &>/dev/null; then
     echo "ERROR: ${PY} is not available after installation"
     exit 1
 fi
 
-echo "Python 3.14 is ready: $(${PY} --version)"
+echo "Python ${PY_VERSION} is ready: $(${PY} --version)"
 
 # Step 3: Build Tarball
 echo ""

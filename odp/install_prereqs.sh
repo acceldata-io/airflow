@@ -2,7 +2,7 @@
 # Install prerequisites for Apache Airflow
 # Run this script as root
 # Supported OS: RHEL 8, RHEL 9, UBI9, Ubuntu 20.04/22.04
-# NOTE: CentOS 7 is NOT supported for Python 3.14 tarball builds.
+# NOTE: CentOS 7 is NOT supported for Python 3.11/3.12 tarball builds.
 #       For CentOS 7 / Python 3.8 builds, use the -2 branch.
 
 set -euo pipefail
