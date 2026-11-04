@@ -41,6 +41,13 @@ apache-airflow-providers-google==22.0.0
 apache-airflow-providers-microsoft-azure==13.3.0
 authlib==1.7.2
 
+# Airflow 3 defaults to SimpleAuthManager, which authenticates against a static
+# user list and is not meant for production. FAB supplies the real login stack
+# that webserver_config.py and airflow3-ldap-site already assume, and the Ranger
+# auth manager subclasses FabAuthManager for authentication.
+# Matches the upstream 3.2.2 constraints, so no constraint override is needed.
+apache-airflow-providers-fab==3.6.4
+
 # Data processing
 numpy
 pandas
