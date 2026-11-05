@@ -9,8 +9,14 @@ docutils
 pytest-runner
 Cython
 
-# Use PyMySQL instead of mysqlclient (pure Python, no C compilation needed)
+# Metadata DB drivers, shipped so Ambari installs nothing at runtime.
+# Sync drivers for the URLs the Ambari mpack writes (postgresql+psycopg2, mysql+pymysql) and
+# the async drivers Airflow 3 derives from them (asyncpg, aiomysql). All pure-Python or
+# manylinux wheels; PyMySQL is used instead of mysqlclient (no C compilation needed).
 PyMySQL==1.1.3
+aiomysql==0.3.2
+psycopg2-binary==2.9.12
+asyncpg==0.31.0
 
 # Pin versions to match the production Python environment
 aiofiles==24.1.0
