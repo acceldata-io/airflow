@@ -166,6 +166,18 @@ def test_authorize_fail_closed_on_malformed_decisions(agent):
     assert decisions[0].allowed is False
 
 
+@pytest.mark.parametrize("allowed", ["false", "true", "0", "no", 1, 0, None])
+def test_authorize_denies_when_allowed_is_not_a_boolean(agent, allowed):
+    """bool("false") is True, so a non-boolean must deny rather than allow."""
+    agent.authorize_body = {"policy_version": 1, "decisions": [{"id": "0", "allowed": allowed}]}
+    decisions = _client(agent).authorize(
+        "alice",
+        RequestContext(client_ip="1.1.1.1", request_uri="/"),
+        [AuthorizeCheck(id="0", resource_type="dag", method="GET", key="x")],
+    )
+    assert decisions[0].allowed is False
+
+
 def test_authorize_fail_closed_on_timeout(agent):
     agent.sleep_s = 0.4
     decisions = _client(agent, read_timeout=0.05).authorize(

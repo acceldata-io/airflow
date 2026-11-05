@@ -290,14 +290,16 @@ def _parse_decisions(body: dict[str, Any], checks: list[AuthorizeCheck]) -> list
         return None
     ordered = []
     for check, item in zip(checks, raw):
-        if not isinstance(item, dict) or "allowed" not in item:
+        if not isinstance(item, dict) or not isinstance(item.get("allowed"), bool):
+            # Must be a real JSON boolean. bool("false") is True, so anything
+            # else here would turn a malformed response into an allow.
             return None
         if str(item.get("id", "")) != check.id:
             return None
         ordered.append(
             Decision(
                 id=check.id,
-                allowed=bool(item["allowed"]),
+                allowed=item["allowed"],
                 policy_id=_optional_int(item.get("policy_id")),
                 reason=str(item["reason"]) if item.get("reason") is not None else None,
             )
