@@ -2,7 +2,11 @@
 # Versions are controlled by constraints-<python version>.txt (Apache Airflow 3.2.2; passed via --constraint flag)
 # Only pin versions here for packages NOT in the constraints file
 
+# Metadata DB drivers (sync + the async ones Airflow 3 derives); Ambari installs nothing at runtime
 PyMySQL
+aiomysql
+psycopg2-binary
+asyncpg
 
 apache-airflow-providers-celery
 apache-airflow-providers-cncf-kubernetes
