@@ -41,17 +41,16 @@ class StackdriverListAlertPoliciesOperator(GoogleCloudBaseOperator):
     """
     Fetches all the Alert Policies identified by the filter passed as filter parameter.
 
-    The desired return type can be specified by the format parameter, the supported
-    formats are "dict", "json" and None which returns python dictionary, stringified
-    JSON and protobuf respectively.
+    Returns a list of dictionaries by default, or JSON strings when ``format_="json"``.
 
     .. seealso::
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:StackdriverListAlertPoliciesOperator`
 
-    :param format_: (Optional) Desired output format of the result. The
-        supported formats are "dict", "json" and None which returns
-        python dictionary, stringified JSON and protobuf respectively.
+    :param format_: (Optional) Desired output format. ``"dict"`` and ``"json"`` return
+        the hook's list of dictionaries or JSON strings unchanged, respectively.
+        When ``None`` (the default) or any other value, protobuf objects are converted
+        to dictionaries for XCom serialization.
     :param filter_:  If provided, this field specifies the criteria that must be met by alert
         policies to be included in the response.
         For more details, see https://cloud.google.com/monitoring/api/v3/sorting-and-filtering.
@@ -147,7 +146,9 @@ class StackdriverListAlertPoliciesOperator(GoogleCloudBaseOperator):
             context=context,
             project_id=self.project_id or self.hook.project_id,
         )
-        return [AlertPolicy.to_dict(policy) for policy in result]
+        if self.format_ not in ("dict", "json"):
+            return [AlertPolicy.to_dict(policy) for policy in result]
+        return result
 
 
 class StackdriverEnableAlertPoliciesOperator(GoogleCloudBaseOperator):
@@ -472,17 +473,16 @@ class StackdriverListNotificationChannelsOperator(GoogleCloudBaseOperator):
     """
     Fetches all the Notification Channels identified by the filter passed as filter parameter.
 
-    The desired return type can be specified by the format parameter, the
-    supported formats are "dict", "json" and None which returns python
-    dictionary, stringified JSON and protobuf respectively.
+    Returns a list of dictionaries by default, or JSON strings when ``format_="json"``.
 
     .. seealso::
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:StackdriverListNotificationChannelsOperator`
 
-    :param format_: (Optional) Desired output format of the result. The
-        supported formats are "dict", "json" and None which returns
-        python dictionary, stringified JSON and protobuf respectively.
+    :param format_: (Optional) Desired output format. ``"dict"`` and ``"json"`` return
+        the hook's list of dictionaries or JSON strings unchanged, respectively.
+        When ``None`` (the default) or any other value, protobuf objects are converted
+        to dictionaries for XCom serialization.
     :param filter_:  If provided, this field specifies the criteria that
         must be met by notification channels to be included in the response.
         For more details, see https://cloud.google.com/monitoring/api/v3/sorting-and-filtering.
@@ -578,7 +578,9 @@ class StackdriverListNotificationChannelsOperator(GoogleCloudBaseOperator):
             context=context,
             project_id=self.project_id or self.hook.project_id,
         )
-        return [NotificationChannel.to_dict(channel) for channel in channels]
+        if self.format_ not in ("dict", "json"):
+            return [NotificationChannel.to_dict(channel) for channel in channels]
+        return channels
 
 
 class StackdriverEnableNotificationChannelsOperator(GoogleCloudBaseOperator):
